@@ -96,7 +96,9 @@ details code{background:var(--panel);padding:1px 5px;border-radius:4px}
 /* minimal view */
 body.minimal .only-full{display:none !important}
 body.minimal .shell,body.minimal .app{max-width:520px}
-body.minimal .lane{margin-top:12px}
+body.minimal .lane{margin-top:6px}
+#ministeps{display:none;justify-content:flex-end;margin-top:12px}
+body.minimal #ministeps{display:flex}
 /* phone */
 @media (max-width:560px){ .notes{gap:10px} }
 </style>
@@ -171,6 +173,7 @@ body.minimal .lane{margin-top:12px}
 
   <div class="stat only-full" id="stat"></div>
   <div class="minihint" id="minihint"></div>
+  <div class="tlrow" id="ministeps"></div>
   <canvas class="lane" id="lane1"></canvas>
   <canvas class="lane" id="lane2"></canvas>
   <canvas class="lvl only-full" id="lvl"></canvas>
@@ -380,15 +383,17 @@ function build(){
       v.title="click to switch between one shared lane and two stacked lanes";v.onclick=()=>{S.overlay=!S.overlay;save();build();};r1.appendChild(v);r1.appendChild(sep());}
     const t=document.createElement("button");t.className="link"+(S.miniContour?" blue":"");t.textContent=S.miniContour?"▾ contour":"▸ contour";
     t.onclick=()=>{S.miniContour=!S.miniContour;save();build();};r1.appendChild(t);
-    const l2=document.createElement("span");l2.className="sublab";l2.textContent="note";r2.appendChild(l2);
-    ui.miniNote=stepper(r2,()=>S.noteAreaMini+" px",()=>setNote(-10),()=>setNote(10));
-    if(S.miniContour){const l3=document.createElement("span");l3.className="sublab";l3.textContent="contour";r2.appendChild(l3);
-      ui.miniLane=stepper(r2,()=>S.laneH+" px",()=>setLaneH(S.laneH-50),()=>setLaneH(S.laneH+50));}else ui.miniLane=null;
+    // note / contour steppers sit just above the contour chart, as in the float
+    const r3=$("ministeps");r3.innerHTML="";
+    const l2=document.createElement("span");l2.className="sublab";l2.textContent="note";r3.appendChild(l2);
+    ui.miniNote=stepper(r3,()=>S.noteAreaMini+" px",()=>setNote(-10),()=>setNote(10));
+    if(S.miniContour){const l3=document.createElement("span");l3.className="sublab";l3.textContent="contour";r3.appendChild(l3);
+      ui.miniLane=stepper(r3,()=>S.laneH+" px",()=>setLaneH(S.laneH-50),()=>setLaneH(S.laneH+50));}else ui.miniLane=null;
   }else{
     const b=document.createElement("button");b.className="link";b.textContent="▭ minimal";b.onclick=toggleMinimal;tl.appendChild(b);
     const t=document.createElement("button");t.className="link"+(S.fullContour?" blue":"");t.textContent=S.fullContour?"▾ contour":"▸ contour";
     t.onclick=()=>{S.fullContour=!S.fullContour;save();build();};tl.appendChild(t);
-    ui.miniNote=null;ui.miniLane=null;ui.miniStart=null;
+    ui.miniNote=null;ui.miniLane=null;ui.miniStart=null;$("ministeps").innerHTML="";
   }
   if("documentPictureInPicture" in window){
     const f=document.createElement("button");f.className="link"+(pip?" blue":"");f.id="floatbtn";f.textContent=pip?"⧉ floating…":"⧉ float";

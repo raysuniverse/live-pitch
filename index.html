@@ -435,6 +435,7 @@ function layout(){
   [$("lane1"),$("lane2")].forEach(c=>{c.width=w*dpr;c.height=H*dpr;c.style.height=H+"px";c.getContext("2d").setTransform(dpr,0,0,dpr,0,0);});
   const l=$("lvl");l.width=w*dpr;l.height=12*dpr;l.getContext("2d").setTransform(dpr,0,0,dpr,0,0);
   ui.laneW=w;
+  if(!running&&(S.minimal?S.miniContour:S.fullContour))draw();   // resizing clears the canvases; redraw the idle ladder
 }
 function refresh(){
   $("panel").classList.toggle("hidden",!S.settingsOpen);
@@ -448,6 +449,7 @@ function refresh(){
   ui.yousl.draw();ui.heardsl.draw();ui.rangesl.draw();
   if(ui.miniStart){ui.miniStart.textContent=running?"↻ restart":"▶ Start";ui.miniStart.classList.toggle("blue",!running);}
   const sh=$("starthint");$("minihint").textContent=(sh.classList.contains("err")||sh.textContent.startsWith("Could"))?sh.textContent:"";
+  if(!running&&ui.laneW&&(S.minimal?S.miniContour:S.fullContour))draw();   // before Start: ladder + target lines, not an empty box
 }
 // lane height = vertical resolution: more pixels per semitone, and sharps + semitone grid lines appear once there is room
 // note / Hz size per view (full vs minimal), as a CSS variable the .note and .hz rules scale from

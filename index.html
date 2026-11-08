@@ -438,7 +438,7 @@ function layout(){
 }
 function refresh(){
   $("panel").classList.toggle("hidden",!S.settingsOpen);
-  $("gear").textContent=S.settingsOpen?"⚙ settings ▴":"⚙ settings";$("gear").style.color=S.settingsOpen?BLUE:"";
+  $("gear").textContent=S.settingsOpen?"⚙ settings ▴":"⚙ settings";$("gear").classList.toggle("blue",S.settingsOpen);   // blue + bold while open, like the other toggles
   $("heardrow").style.display=hearOn?"":"none";$("hearcol").style.visibility=hearOn?"":"hidden";
   const contour=S.minimal?S.miniContour:S.fullContour;
   $("lane1").style.display=contour?"":"none";

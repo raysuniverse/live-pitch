@@ -80,6 +80,8 @@ body.minimal .toplinks{flex-basis:100%;flex-direction:column;align-items:flex-st
 canvas.slider{display:block;cursor:pointer;touch-action:none}
 /* stats + lanes */
 .stat{font-size:13px;color:var(--grey);margin-top:12px;min-height:20px}
+.minihint{font-size:13px;color:var(--amber);margin-top:8px;display:none}
+body.minimal .minihint:not(:empty){display:block}
 .lane{display:block;width:100%;border:1px solid var(--line);border-radius:10px;margin-top:6px}
 .lvl{display:block;width:100%;height:12px;margin-top:6px}
 .summary{margin-top:10px;font-size:13px;color:var(--grey);white-space:pre-line}
@@ -166,6 +168,7 @@ body.minimal .lane{margin-top:12px}
   </div>
 
   <div class="stat only-full" id="stat"></div>
+  <div class="minihint" id="minihint"></div>
   <canvas class="lane" id="lane1"></canvas>
   <canvas class="lane" id="lane2"></canvas>
   <canvas class="lvl only-full" id="lvl"></canvas>
@@ -364,7 +367,8 @@ function build(){
   const cur=()=>S.minimal?S.minimalScale:S.scale;
   ui.sizeStep=stepper(r1,()=>Math.round(cur()*100)+"%",()=>setScale(cur()-0.1),()=>setScale(cur()+0.1));
   if(S.minimal){
-    const b=document.createElement("button");b.className="link blue";b.textContent="⤢ full view";b.onclick=toggleMinimal;r1.appendChild(b);
+    const st=document.createElement("button");st.className="link";st.onclick=()=>start(false);r1.appendChild(st);ui.miniStart=st;
+    const b=document.createElement("button");b.className="link";b.textContent="⤢ full view";b.onclick=toggleMinimal;r1.appendChild(b);
     const t=document.createElement("button");t.className="link"+(S.miniContour?" blue":"");t.textContent=S.miniContour?"▾ contour":"▸ contour";
     t.onclick=()=>{S.miniContour=!S.miniContour;save();build();};r1.appendChild(t);
     if(S.miniContour){const v=document.createElement("button");v.className="link";v.innerHTML=viewLabel(S.overlay);
@@ -377,7 +381,7 @@ function build(){
     const b=document.createElement("button");b.className="link";b.textContent="▭ minimal";b.onclick=toggleMinimal;tl.appendChild(b);
     const t=document.createElement("button");t.className="link"+(S.fullContour?" blue":"");t.textContent=S.fullContour?"▾ contour":"▸ contour";
     t.onclick=()=>{S.fullContour=!S.fullContour;save();build();};tl.appendChild(t);
-    ui.miniNote=null;ui.miniLane=null;
+    ui.miniNote=null;ui.miniLane=null;ui.miniStart=null;
   }
   if("documentPictureInPicture" in window){
     const f=document.createElement("button");f.className="link"+(pip?" blue":"");f.id="floatbtn";f.textContent=pip?"⧉ floating…":"⧉ float";
@@ -427,6 +431,8 @@ function refresh(){
   $("lvl").style.display=(contour&&!S.minimal)?"":"none";
   ["sizeStep","heardAuto","rangeAuto","viewSeg","spanSeg","heightStep","noteStep","miniNote","miniLane"].forEach(k=>ui[k]&&ui[k].refresh());
   ui.yousl.draw();ui.heardsl.draw();ui.rangesl.draw();
+  if(ui.miniStart){ui.miniStart.textContent=running?"↻ restart":"▶ Start";ui.miniStart.classList.toggle("blue",!running);}
+  const sh=$("starthint");$("minihint").textContent=(sh.classList.contains("err")||sh.textContent.startsWith("Could"))?sh.textContent:"";
 }
 // lane height = vertical resolution: more pixels per semitone, and sharps + semitone grid lines appear once there is room
 // note / Hz size per view (full vs minimal), as a CSS variable the .note and .hz rules scale from
@@ -473,7 +479,7 @@ async function start(isDemo){
     }catch(e){
       hint.textContent="Mic error — "+(e.name==="NotAllowedError"?"the browser blocked the microphone: click the mic icon in the address bar and allow it (on a Mac also System Settings → Privacy & Security → Microphone)."
         :e.name==="NotFoundError"?"no microphone found.":e.name==="NotReadableError"?"the microphone is busy in another app.":e.name+": "+e.message);
-      hint.classList.add("err");teardown();return;
+      hint.classList.add("err");teardown();refresh();return;
     }
     await listDevices();
     hearOn=false;const hsel=$("hearsel").value;
@@ -661,7 +667,7 @@ async function openFloat(){
     body.stacked:not(.nocontour) .g{grid-template-rows:32px auto auto 24px 24px var(--lh,140px) var(--lh,140px)}
     body:not(.stacked) #pl2{display:none}
     #pl2{margin-top:4px}
-    .tog>span{cursor:pointer}.tog .st{cursor:default}.tog .on{color:#4285F4;font-weight:700}.tog .off{color:#BDC1C6}.tog span:hover{color:#4285F4}.tog .sep{color:#DADCE0;cursor:default}
+    .tog>span{cursor:pointer}.tog .st{cursor:default}.tog .lft{margin-right:auto;display:inline-flex;gap:6px}.tog .lft span{cursor:pointer}.tog .lft .sep{cursor:default}.tog .go{color:#4285F4;font-weight:600}.tog .on{color:#4285F4;font-weight:700}.tog .off{color:#BDC1C6}.tog span:hover{color:#4285F4}.tog .sep{color:#DADCE0;cursor:default}
     .g>*{min-width:0;overflow:hidden}
     .cap{font-size:12px;font-weight:700;color:#5F6368;letter-spacing:.04em;line-height:1.3;height:32px;overflow:hidden}
     .cap .dev{font-weight:400;color:#9AA0A6;letter-spacing:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -674,10 +680,10 @@ async function openFloat(){
     <div class="cap">YOU<div class="dev" id="yc"></div></div><div class="cap hearcol">HEAR<div class="dev" id="hcap"></div></div>
     <div class="note" id="yn">—</div><div class="note hearcol" id="hn">—</div>
     <div class="hz" id="yh"></div><div class="hz hearcol" id="hh"></div>
-    <div class="tog"><span id="po"></span><span class="sep" id="ps"> · </span><span id="pt"></span></div>
+    <div class="tog"><span class="lft"><span id="pst"></span><span class="sep"> · </span><span id="pfull">⤢ full view</span></span><span id="po"></span><span class="sep" id="ps"> · </span><span id="pt"></span></div>
     <div class="tog"><span class="st">note <i id="pn-">−</i><b id="pn"></b><i id="pn+">+</i></span>
       <span class="st" id="plrow">contour <i id="pl-">−</i><b id="plv"></b><i id="pl+">+</i></span></div><canvas class="lane" id="pl"></canvas><canvas class="lane" id="pl2"></canvas></div><div class="hint" id="ph"></div>`;
-  pipEls={yn:d.getElementById("yn"),yh:d.getElementById("yh"),hn:d.getElementById("hn"),hh:d.getElementById("hh"),hc:[...d.querySelectorAll(".hearcol")],ph:d.getElementById("ph"),yc:d.getElementById("yc"),hcap:d.getElementById("hcap"),pt:d.getElementById("pt"),pl:d.getElementById("pl"),pl2:d.getElementById("pl2"),po:d.getElementById("po"),ps:d.getElementById("ps")};
+  pipEls={yn:d.getElementById("yn"),yh:d.getElementById("yh"),hn:d.getElementById("hn"),hh:d.getElementById("hh"),hc:[...d.querySelectorAll(".hearcol")],ph:d.getElementById("ph"),yc:d.getElementById("yc"),hcap:d.getElementById("hcap"),pt:d.getElementById("pt"),pst:d.getElementById("pst"),pfull:d.getElementById("pfull"),pl:d.getElementById("pl"),pl2:d.getElementById("pl2"),po:d.getElementById("po"),ps:d.getElementById("ps")};
   const applyContour=()=>{d.body.classList.toggle("nocontour",!S.pipContour);pipEls.pt.textContent=S.pipContour?"▾ contour":"▸ contour";pipEls.pt.style.color=S.pipContour?"#4285F4":"";
     const showView=S.pipContour&&hearOn;pipEls.po.style.display=pipEls.ps.style.display=showView?"":"none";pipEls.po.innerHTML=viewLabel(S.pipOverlay);
     d.documentElement.style.setProperty("--na",S.pipNoteArea+"px");d.documentElement.style.setProperty("--lh",S.pipLaneH+"px");
@@ -690,11 +696,13 @@ async function openFloat(){
   d.getElementById("pl-").onclick=bump(()=>S.pipLaneH=Math.max(40,S.pipLaneH-20));
   d.getElementById("pl+").onclick=bump(()=>S.pipLaneH=Math.min(600,S.pipLaneH+20));
   pipEls.applyContour=applyContour;
+  pipEls.pst.onclick=()=>start(false);
+  pipEls.pfull.onclick=()=>{if(S.minimal)toggleMinimal();try{window.focus();}catch(e){}};
   pipEls.pt.onclick=bump(()=>S.pipContour=!S.pipContour);
   pipEls.po.onclick=bump(()=>S.pipOverlay=!S.pipOverlay);applyContour();
   pip.addEventListener("pagehide",()=>{pip=null;pipEls=null;const b=$("floatbtn");if(b){b.textContent="⧉ float";b.classList.remove("blue");}});
   const b=$("floatbtn");if(b){b.textContent="⧉ floating…";b.classList.add("blue");}
-  if(!running){pipEls.ph.textContent="press Start on the main page";}
+  if(!running){pipEls.ph.textContent="not listening yet — press ▶ Start";}
   pipTick();
 }
 function pipTick(){
@@ -707,7 +715,8 @@ function pipTick(){
   if(hearOn){e.hcap.textContent=hear.label?hear.label.replace(/\s*\(.*\)$/,""):"";
     if(hear.hz>0){const n=nOf(hear.hz);e.hn.textContent=nameOf(n);e.hn.style.color=specColour(n);e.hh.textContent=hear.hz.toFixed(0)+" Hz";e.hh.style.color=specColour(n);}
     else if(now>hear.holdUntil){e.hn.textContent="—";e.hn.style.color=FAINT;e.hh.textContent=now-hear.lastSignal>5?"silent":"";}}
-  e.ph.textContent=running?"":"press Start on the main page";
+  e.ph.textContent=running?"":"not listening yet — press ▶ Start";
+  e.pst.textContent=running?"↻ restart":"▶ Start";e.pst.classList.toggle("go",!running);
   // contour under the notes: the same lane renderer, sized to the window; overlay = one lane, stacked = YOU over HEAR
   if(S.pipContour&&pip){
     const stacked=hearOn&&!S.pipOverlay;pip.document.body.classList.toggle("stacked",stacked);e.applyContour();

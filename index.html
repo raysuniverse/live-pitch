@@ -668,6 +668,9 @@ async function openFloat(){
     .g{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);grid-template-rows:30px 32px auto auto 24px var(--lh,140px);padding:8px 14px 8px;box-sizing:border-box;column-gap:16px;align-content:start}
     .tog{grid-column:1/-1;display:flex;flex-wrap:nowrap;justify-content:flex-end;align-items:center;gap:6px 10px;font-size:11px;color:#5F6368;user-select:none;height:24px;overflow:hidden;white-space:nowrap}
     .tog.nav{font-size:14px;height:30px;gap:6px 14px}.tog.nav .lft{gap:8px}
+    body{container-type:inline-size}
+    @container (max-width:400px){.tog.nav{font-size:12px;gap:6px 10px}.tog.nav .lft{gap:6px}.tog{font-size:10px}.tog .st b{min-width:3em}}
+    @container (max-width:330px){.tog.nav{font-size:11px;gap:4px 6px}.tog.nav .lft{gap:4px}.tog .sep{display:none}.tog .st i{width:14px;height:14px;line-height:13px}}
     .tog .st{display:inline-flex;align-items:center;gap:3px;color:#9AA0A6}.tog .st b{color:#5F6368;font-weight:600;min-width:3.5em;text-align:center}
     .tog .st i{font-style:normal;display:inline-block;width:16px;height:16px;line-height:15px;text-align:center;border:1px solid #DADCE0;border-radius:50%;cursor:pointer;color:#5F6368}
     .tog .st i:hover{background:#F1F3F4}

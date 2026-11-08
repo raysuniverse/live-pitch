@@ -417,8 +417,8 @@ function build(){
     $("copybtn").onclick=copyHeard;$("gear").onclick=()=>{S.settingsOpen=!S.settingsOpen;save();refresh();};
     $("csvbtn").onclick=downloadCsv;$("stopbtn").onclick=stop;
     $("startbtn").onclick=()=>start(false);$("demobtn").onclick=()=>start(true);
-    $("micsel").onchange=()=>{S.micId=$("micsel").value;save();if(running&&!demo)start(false);};
-    $("hearsel").onchange=()=>{S.hearId=$("hearsel").value;save();if(running&&!demo)start(false);};
+    $("micsel").onchange=()=>{S.micId=$("micsel").value;save();$("micsel").blur();if(running&&!demo)start(false);};
+    $("hearsel").onchange=()=>{S.hearId=$("hearsel").value;save();$("hearsel").blur();if(running&&!demo)start(false);};
     window.addEventListener("resize",layout);
     ui.built=true;
   }
@@ -482,7 +482,7 @@ function teardown(){
 async function start(isDemo){
   teardown();you.reset();hear.reset();log=[];det=null;$("summary").textContent="";
   ac=new (window.AudioContext||window.webkitAudioContext)();
-  if(ac.state==="suspended")await ac.resume();
+  if(ac.state==="suspended"){ac.resume().catch(()=>{});setTimeout(()=>{if(ac&&ac.state==="suspended")$("starthint").textContent="Audio is paused by the browser — click anywhere on the page once.";},1200);}
   const hint=$("starthint");
   if(isDemo){
     demo=demoGraph(ac);hearOn=true;$("youcap").textContent="YOU · demo voice";$("hearcap").textContent="HEAR · demo coach";
@@ -770,7 +770,7 @@ function onKey(e,inPip){
   const brL=k==="["||code==="BracketLeft",brR=k==="]"||code==="BracketRight";
   const pipRefit=()=>{save();if(pipEls){pipEls.applyContour();try{pip.resizeTo(Math.max(pip.outerWidth,Math.round(420*(S.pipScale||1))),pipHeight());}catch(err){}pipTick();}};
   if(k==="ArrowUp"){shiftYou(1);e.preventDefault();}else if(k==="ArrowDown"){shiftYou(-1);e.preventDefault();}
-  else if(k==="s")start(false);
+  else if(k==="s"){if(inPip&&pipEls)pipEls.pst.textContent="starting…";if(ui.hdrStart)ui.hdrStart.textContent="starting…";start(false);}
   else if(k==="c"){if(inPip){S.pipContour=!S.pipContour;pipRefit();}else{if(S.minimal)S.miniContour=!S.miniContour;else S.fullContour=!S.fullContour;save();build();}}
   else if(k==="a")toggleHeardAuto();else if(k==="t")copyHeard();
   else if(k==="o"){if(inPip){S.pipOverlay=!S.pipOverlay;pipRefit();}else{S.overlay=!S.overlay;save();build();}}

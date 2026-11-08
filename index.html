@@ -212,7 +212,7 @@ function yin(x, sr, fmin, thresh=0.15){
 }
 
 class Source{
-  constructor(key,fmin){this.key=key;this.fmin=fmin;this.analyser=null;this.label="";this.reset();}
+  constructor(key,fmin,loop=false){this.key=key;this.fmin=fmin;this.loop=loop;this.analyser=null;this.label="";this.reset();}
   reset(){this.hist=[];this.miss=0;this.trace=[];this.voiced=[];this.rmsHist=[];this.gate=0.0025;this.rms=0;this.hz=0;this.holdUntil=0;this.lastSignal=performance.now()/1000;}
   attach(ac,node,label){this.ac=ac;this.analyser=ac.createAnalyser();this.analyser.fftSize=4096;node.connect(this.analyser);this.label=label;
     this.dec=Math.max(1,Math.round(ac.sampleRate/16000));this.sr=ac.sampleRate/this.dec;this.raw=new Float32Array(4096);this.frame=new Float32Array(WIN);}
@@ -222,11 +222,13 @@ class Source{
     const need=WIN*this.dec, off=this.raw.length-need; let e=0;
     for(let i=0;i<WIN;i++){let s=0;for(let k=0;k<this.dec;k++)s+=this.raw[off+i*this.dec+k];s/=this.dec;this.frame[i]=s;e+=s*s;}
     const rms=Math.sqrt(e/WIN); this.rms=rms;
-    if(rms>0.001)this.lastSignal=performance.now()/1000;
+    if(rms>0.0003)this.lastSignal=performance.now()/1000;
     this.rmsHist.push(rms); if(this.rmsHist.length>200)this.rmsHist.shift();
     let noise=0.0015;
     if(this.rmsHist.length>=20){const s=[...this.rmsHist].sort((a,b)=>a-b);noise=s[Math.floor(s.length*0.1)];}
-    this.gate=Math.min(Math.max(0.0015,noise*2),0.004);
+    // a loopback (BlackHole, a shared tab) is a digital feed with no room noise: a fixed low gate. The adaptive gate
+    // used to switch on after 20 frames (1 s) and, learning from continuous speech, swallowed a quiet feed entirely.
+    this.gate=this.loop?0.001:Math.min(Math.max(0.0015,noise*2),0.004);
     if(rms<this.gate)return 0;
     return yin(this.frame,this.sr,this.fmin);
   }
@@ -252,7 +254,7 @@ const DEF={you:{floor:47,home:52,ceiling:64},heard:{auto:true,floor:null,home:nu
 let S; try{S=Object.assign({},DEF,JSON.parse(localStorage.getItem("livepitch.v1")||"{}"));S.you=Object.assign({},DEF.you,S.you);S.heard=Object.assign({},DEF.heard,S.heard);}catch(e){S=JSON.parse(JSON.stringify(DEF));}
 function save(){try{localStorage.setItem("livepitch.v1",JSON.stringify(S));}catch(e){}}
 
-const you=new Source("you",80), hear=new Source("hear",60);
+const you=new Source("you",80), hear=new Source("hear",60,true);
 let ac=null, running=false, hearOn=false, demo=null, t0=0, timer=null, log=[], det=null, detAt=0, autoLo=43, autoHi=64, streams=[];
 const $=id=>document.getElementById(id);
 
@@ -412,7 +414,7 @@ async function listDevices(){
   }catch(e){}
 }
 function teardown(){
-  if(timer){clearInterval(timer);timer=null;}
+  stopTicker();
   streams.forEach(s=>s.getTracks().forEach(t=>t.stop()));streams=[];
   if(demo){try{demo.forEach(o=>o.stop());}catch(e){}demo=null;}
   if(ac){try{ac.close();}catch(e){}ac=null;}
@@ -453,7 +455,7 @@ async function start(isDemo){
     if(!hint.classList.contains("err")&&!hint.textContent.startsWith("Could")){hint.innerHTML=hearOn?"Listening to you <b>and</b> what you hear. Speak — or play something.":"Listening to you. Add “what I hear” to see your coach’s notes too (see the help at the bottom).";}
   }
   running=true;t0=performance.now()/1000;$("startbtn").textContent="↻ restart";if(pipEls)pipTick();
-  timer=setInterval(tick,TICK);refresh();
+  startTicker();refresh();
 }
 function demoGraph(ac){
   // two oscillators feeding the analysers only (nothing to the speakers): a "voice" around E3 and a "coach" around A2
@@ -487,6 +489,17 @@ function downloadCsv(){
   setTimeout(()=>URL.revokeObjectURL(a.href),2000);
 }
 
+/* ============ ticker ============ */
+// Chrome throttles main-thread timers to once a second in a hidden tab (e.g. while a clip plays in another tab or the
+// floating window is watched), which starves the trace. A worker's timer is not throttled, so it drives the tick.
+function startTicker(){
+  stopTicker();
+  try{const url=URL.createObjectURL(new Blob([`setInterval(()=>postMessage(0),${TICK})`],{type:"text/javascript"}));
+    timer=new Worker(url);timer.onmessage=()=>{if(running)tick();};}
+  catch(e){timer=setInterval(tick,TICK);}
+}
+function stopTicker(){if(!timer)return;if(timer instanceof Worker)timer.terminate();else clearInterval(timer);timer=null;}
+
 /* ============ per tick ============ */
 let lastSec=-1;
 function tick(){
@@ -504,6 +517,7 @@ function tick(){
       $("heargap").textContent=hz>0?`you ${(nOf(hz)-hn)>0?"+":""}${(nOf(hz)-hn).toFixed(1)} st vs them`:"";$("heargap").style.color=GREY;}
     else if(now>hear.holdUntil){$("hearnote").textContent="—";$("hearnote").style.color=FAINT;
       if(now-hear.lastSignal>5){$("hearhz").textContent="silent";$("hearhz").style.color=FAINT;$("heargap").textContent="nothing is reaching “what I hear” — check the routing (help below)";$("heargap").style.color=AMBER;}
+      else if(hear.rms>0&&hear.rms<hear.gate){$("hearhz").textContent=dbOf(hear.rms)+" dB";$("hearhz").style.color=FAINT;$("heargap").textContent="sound is arriving but very quiet — turn the player / Zoom up";$("heargap").style.color=AMBER;}
       else{$("hearhz").textContent="";$("heargap").textContent="";}}
   }
   if(pipEls)pipTick();
@@ -572,10 +586,12 @@ function traceLine(g,pts,lo,hi,y,tnow,tw,width,colour){
     last=p;lastT=t;
   }
 }
+function dbOf(rms){return rms>0?Math.max(-99,Math.round(20*Math.log10(rms))):-99;}
 function drawLevels(){
   const c=$("lvl"),g=c.getContext("2d"),W=ui.laneW;g.clearRect(0,0,W,12);
   const rows=[[you,GREEN,0]];if(hearOn)rows.push([hear,GREY,7]);
-  rows.forEach(([s,col,y0])=>{g.fillStyle="#F1F3F4";g.fillRect(0,y0,W,5);g.fillStyle=s.rms>=s.gate?col:LINE;g.fillRect(0,y0,Math.min(W,s.rms*3000),5);g.fillStyle=GREY;g.fillRect(Math.min(W,s.gate*3000),y0,1,5);});
+  const px=v=>Math.max(0,Math.min(W,W*(dbOf(v)+72)/72));   // −72 dB … 0 dB across the bar
+  rows.forEach(([s,col,y0])=>{g.fillStyle="#F1F3F4";g.fillRect(0,y0,W,5);g.fillStyle=s.rms>=s.gate?col:LINE;g.fillRect(0,y0,px(s.rms),5);g.fillStyle=GREY;g.fillRect(px(s.gate),y0,1,5);});
 }
 
 /* ============ floating window (Document Picture-in-Picture, Chrome 116+) ============ */

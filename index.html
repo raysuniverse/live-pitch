@@ -146,6 +146,7 @@ body.minimal .col .note{font-size:84px}
       <span class="lab">display</span>
       <span class="sublab">view</span><span id="viewseg"></span>
       <span class="sublab">window</span><span id="spanseg"></span>
+      <span class="sublab">height</span><span id="heightstep"></span>
       <span class="sublab">range</span><span id="rangeauto"></span>
       <canvas class="slider" id="rangesl"></canvas>
     </div>
@@ -250,7 +251,7 @@ class Source{
 /* ============ state ============ */
 const KEYS=["floor","home","ceiling"];
 const DEF={you:{floor:47,home:52,ceiling:64},heard:{auto:true,floor:null,home:null,ceiling:null},overlay:false,
-  rangeAuto:true,lo:43,hi:64,span:10,scale:1,minimalScale:1,minimal:false,settingsOpen:false,micId:"",hearId:""};
+  rangeAuto:true,lo:43,hi:64,span:10,laneH:150,scale:1,minimalScale:1,minimal:false,settingsOpen:false,micId:"",hearId:""};
 let S; try{S=Object.assign({},DEF,JSON.parse(localStorage.getItem("livepitch.v1")||"{}"));S.you=Object.assign({},DEF.you,S.you);S.heard=Object.assign({},DEF.heard,S.heard);}catch(e){S=JSON.parse(JSON.stringify(DEF));}
 function save(){try{localStorage.setItem("livepitch.v1",JSON.stringify(S));}catch(e){}}
 
@@ -370,6 +371,7 @@ function build(){
     ui.rangeAuto=chip($("rangeauto"),"auto",()=>S.rangeAuto,()=>{S.rangeAuto=!S.rangeAuto;if(!S.rangeAuto){S.lo=autoLo;S.hi=autoHi;}save();refresh();});
     ui.viewSeg=segmented($("viewseg"),["stacked","overlay"],()=>S.overlay?1:0,i=>{S.overlay=i===1;save();refresh();});
     ui.spanSeg=segmented($("spanseg"),["5 s","10 s","20 s"],()=>({5:0,10:1,20:2})[S.span]??1,i=>{S.span=[5,10,20][i];save();refresh();});
+    ui.heightStep=stepper($("heightstep"),()=>S.laneH+" px",()=>setLaneH(S.laneH-50),()=>setLaneH(S.laneH+50));
     $("copybtn").onclick=copyHeard;$("gear").onclick=()=>{S.settingsOpen=!S.settingsOpen;save();refresh();};
     $("csvbtn").onclick=downloadCsv;$("stopbtn").onclick=stop;
     $("startbtn").onclick=()=>start(false);$("demobtn").onclick=()=>start(true);
@@ -386,7 +388,8 @@ function layout(){
   ui.heardsl.size(Math.min(320,Math.max(200,w-380)));
   ui.rangesl.size(Math.min(240,Math.max(160,w-520)));
   const dpr=window.devicePixelRatio||1;
-  [$("lane1"),$("lane2")].forEach(c=>{c.width=w*dpr;c.height=150*dpr;c.style.height="150px";c.getContext("2d").setTransform(dpr,0,0,dpr,0,0);});
+  const H=S.laneH||150;
+  [$("lane1"),$("lane2")].forEach(c=>{c.width=w*dpr;c.height=H*dpr;c.style.height=H+"px";c.getContext("2d").setTransform(dpr,0,0,dpr,0,0);});
   const l=$("lvl");l.width=w*dpr;l.height=12*dpr;l.getContext("2d").setTransform(dpr,0,0,dpr,0,0);
   ui.laneW=w;
 }
@@ -395,9 +398,11 @@ function refresh(){
   $("gear").textContent=S.settingsOpen?"⚙ settings ▴":"⚙ settings";$("gear").style.color=S.settingsOpen?BLUE:"";
   $("heardrow").style.display=hearOn?"":"none";$("hearcol").style.visibility=hearOn?"":"hidden";
   $("lane2").style.display=(hearOn&&!S.overlay)?"":"none";
-  ["sizeStep","heardAuto","rangeAuto","viewSeg","spanSeg"].forEach(k=>ui[k]&&ui[k].refresh());
+  ["sizeStep","heardAuto","rangeAuto","viewSeg","spanSeg","heightStep"].forEach(k=>ui[k]&&ui[k].refresh());
   ui.yousl.draw();ui.heardsl.draw();ui.rangesl.draw();
 }
+// lane height = vertical resolution: more pixels per semitone, and sharps + semitone grid lines appear once there is room
+function setLaneH(v){S.laneH=Math.max(100,Math.min(600,Math.round(v/50)*50));save();layout();refresh();}
 function setScale(v){v=Math.round(Math.max(0.6,Math.min(2,v))*10)/10;if(S.minimal)S.minimalScale=v;else S.scale=v;save();$("app").style.zoom=S.minimal?S.minimalScale:S.scale;refresh();setTimeout(layout,0);}
 function toggleMinimal(){S.minimal=!S.minimal;save();build();}
 
@@ -553,16 +558,18 @@ function draw(){
   else{lane(c1,lo,hi,tnow,"YOU",{you:true,hear:false,youLevels:true,heard:hl,otherHome:true});lane(c2,lo,hi,tnow,"HEAR",{you:false,hear:true,youLevels:false,heard:hl,otherHome:true});}
 }
 function lane(c,lo,hi,tnow,caption,o){
-  const g=c.getContext("2d"),W=ui.laneW,H=150,LW=42,tw=W-LW;g.clearRect(0,0,W,H);
+  const g=c.getContext("2d"),W=ui.laneW,H=S.laneH||150,LW=42,tw=W-LW;g.clearRect(0,0,W,H);
   const y=n=>4+(hi-n)/(hi-lo)*(H-8);const lv=S.you,hl=o.heard;
   const heardFull=hl&&hl.floor!=null&&(o.hear||!o.otherHome);
   if(o.youLevels){g.fillStyle="#E6F4EA";g.fillRect(0,y(lv.ceiling+0.5),tw,y(lv.floor-0.5)-y(lv.ceiling+0.5));}
   if(heardFull){g.fillStyle="rgba(218,220,224,.45)";g.fillRect(0,y(hl.ceiling),tw,y(hl.floor)-y(hl.ceiling));}
+  const pxSt=(H-8)/(hi-lo);                                   // pixels per semitone
+  if(pxSt>=10){for(let n=Math.ceil(lo);n<=hi;n++){g.fillStyle=nameOf(n).includes("#")?"#F1F3F4":"#E8EAED";g.fillRect(0,Math.round(y(n)),tw,1);}}
   // gradient ladder + note names
   const yTop=y(hi+0.5),yBot=y(lo-0.5);
   for(let py=yTop;py<yBot;py+=2){const n=hi+0.5-(py-yTop)/(yBot-yTop)*(hi-lo+1);g.fillStyle=specColour(n);g.fillRect(tw+2,py,12,2);}
   g.font="700 11px 'Google Sans',system-ui,sans-serif";g.textAlign="left";g.textBaseline="middle";let lastY=-99;
-  for(let n=hi;n>=lo;n--){const nm=nameOf(n);if(nm.includes("#")||y(n)-lastY<12)continue;g.fillStyle=specColour(n);g.fillText(nm,tw+17,y(n));lastY=y(n);}
+  for(let n=hi;n>=lo;n--){const nm=nameOf(n);if((nm.includes("#")&&pxSt<13)||y(n)-lastY<12)continue;g.fillStyle=specColour(n);g.fillText(nm,tw+17,y(n));lastY=y(n);}
   g.font="10px 'Google Sans',system-ui,sans-serif";
   const hline=(yy,col,w,dash,label,left)=>{g.save();g.strokeStyle=col;g.lineWidth=w;g.setLineDash(dash);g.beginPath();g.moveTo(0,yy);g.lineTo(tw,yy);g.stroke();g.restore();
     g.fillStyle=col;g.textAlign=left?"left":"right";g.textBaseline="bottom";g.fillText(label,left?3:tw-3,yy-2);};
@@ -644,6 +651,7 @@ document.addEventListener("keydown",e=>{
   else if(k==="r"){S.rangeAuto=!S.rangeAuto;if(!S.rangeAuto){S.lo=autoLo;S.hi=autoHi;}save();refresh();}
   else if(k==="+"||k==="=")setScale((S.minimal?S.minimalScale:S.scale)+0.1);else if(k==="-")setScale((S.minimal?S.minimalScale:S.scale)-0.1);
   else if(k==="m")toggleMinimal();else if(k==="d")downloadCsv();
+  else if(k==="]")setLaneH(S.laneH+50);else if(k==="[")setLaneH(S.laneH-50);
 });
 
 build();

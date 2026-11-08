@@ -629,8 +629,8 @@ function lane(c,lo,hi,tnow,caption,o){
   g.font="10px 'Google Sans',system-ui,sans-serif";
   const hline=(yy,col,w,dash,label,left)=>{g.save();g.strokeStyle=col;g.lineWidth=w;g.setLineDash(dash);g.beginPath();g.moveTo(0,yy);g.lineTo(tw,yy);g.stroke();g.restore();
     g.fillStyle=col;g.textAlign=left?"left":"right";g.textBaseline="bottom";g.fillText(label,left?3:tw-3,yy-2);};
-  if(o.youLevels){hline(y(lv.floor),GREEN,1,[],"floor",false);hline(y(lv.home),GREEN,2,[],"home",false);hline(y(lv.ceiling),GREEN,1,[],"ceiling",false);}
-  else if(o.otherHome)hline(y(lv.home),GREEN,1,[2,4],"your home",false);
+  if(o.youLevels){hline(y(lv.floor),GREEN,1,[],"target floor",false);hline(y(lv.home),GREEN,2,[],"target home",false);hline(y(lv.ceiling),GREEN,1,[],"target ceiling",false);}
+  else if(o.otherHome)hline(y(lv.home),GREEN,1,[2,4],"your target home",false);
   if(heardFull){hline(y(hl.floor),GREY,1,[6,3],"heard floor",true);hline(y(hl.home),GREY,2,[6,3],"heard home",true);hline(y(hl.ceiling),GREY,1,[6,3],"heard ceiling",true);}
   else if(hl&&hl.home!=null&&o.otherHome&&!o.hear)hline(y(hl.home),GREY,1,[2,4],"heard home",true);
   g.fillStyle=GREY;g.font="700 11px 'Google Sans',system-ui,sans-serif";g.textAlign="left";g.textBaseline="top";g.fillText(caption,5,4);

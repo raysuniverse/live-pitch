@@ -278,7 +278,7 @@ class Source{
 /* ============ state ============ */
 const KEYS=["floor","home","ceiling"];
 const DEF={you:{floor:47,home:52,ceiling:64},heard:{auto:true,floor:null,home:null,ceiling:null},overlay:true,fullContour:true,overlayDefaulted:true,contourDefaulted:true,
-  rangeAuto:true,lo:43,hi:64,span:10,laneH:150,miniContour:true,pipContour:true,pipOverlay:true,noteAreaFull:104,noteAreaMini:120,pipNoteArea:110,pipLaneH:140,scale:1,minimalScale:1,minimal:false,settingsOpen:false,micId:"",hearId:""};
+  rangeAuto:true,lo:43,hi:64,span:10,laneH:150,miniContour:true,pipContour:true,pipOverlay:true,noteAreaFull:104,noteAreaMini:120,pipNoteArea:110,pipLaneH:140,pipScale:1,scale:1,minimalScale:1,minimal:false,settingsOpen:false,micId:"",hearId:""};
 let S; try{S=Object.assign({},DEF,JSON.parse(localStorage.getItem("livepitch.v1")||"{}"));S.you=Object.assign({},DEF.you,S.you);S.heard=Object.assign({},DEF.heard,S.heard);
   const stored=JSON.parse(localStorage.getItem("livepitch.v1")||"{}");
   if(!stored.overlayDefaulted){S.overlay=true;S.overlayDefaulted=true;}   // 2026-11-08: overlay became the default
@@ -664,7 +664,7 @@ function drawLevels(){
 /* ============ floating window (Document Picture-in-Picture, Chrome 116+) ============ */
 let pip=null,pipEls=null;
 // window height that exactly fits the fixed rows: padding + captions + note block + toggle row + lane(s) + title bar allowance
-function pipHeight(){const lanes=S.pipContour?(hearOn&&!S.pipOverlay?2*S.pipLaneH+4:S.pipLaneH):0;return 16+32+S.pipNoteArea+54+lanes+40;}
+function pipHeight(){const lanes=S.pipContour?(hearOn&&!S.pipOverlay?2*S.pipLaneH+4:S.pipLaneH):0;return Math.round((16+32+S.pipNoteArea+54+lanes)*(S.pipScale||1))+40;}
 async function openFloat(){
   if(pip){pip.focus();return;}
   try{pip=await documentPictureInPicture.requestWindow({width:420,height:pipHeight()});}
@@ -701,16 +701,19 @@ async function openFloat(){
     <div class="cap">YOU<div class="dev" id="yc"></div></div><div class="cap hearcol">HEAR<div class="dev" id="hcap"></div></div>
     <div class="note" id="yn">—</div><div class="note hearcol" id="hn">—</div>
     <div class="hz" id="yh"></div><div class="hz hearcol" id="hh"></div>
-    <div class="tog"><span class="st">note <i id="pn-">−</i><b id="pn"></b><i id="pn+">+</i></span>
+    <div class="tog"><span class="st">size <i id="ps-">−</i><b id="psv"></b><i id="ps+">+</i></span><span class="st">note <i id="pn-">−</i><b id="pn"></b><i id="pn+">+</i></span>
       <span class="st" id="plrow">contour <i id="pl-">−</i><b id="plv"></b><i id="pl+">+</i></span></div><canvas class="lane" id="pl"></canvas><canvas class="lane" id="pl2"></canvas></div><div class="hint" id="ph"></div>`;
   pipEls={yn:d.getElementById("yn"),yh:d.getElementById("yh"),hn:d.getElementById("hn"),hh:d.getElementById("hh"),hc:[...d.querySelectorAll(".hearcol")],ph:d.getElementById("ph"),yc:d.getElementById("yc"),hcap:d.getElementById("hcap"),pt:d.getElementById("pt"),pst:d.getElementById("pst"),pfull:d.getElementById("pfull"),pl:d.getElementById("pl"),pl2:d.getElementById("pl2"),po:d.getElementById("po"),ps:d.getElementById("ps")};
   const applyContour=()=>{d.body.classList.toggle("nocontour",!S.pipContour);pipEls.pt.textContent=S.pipContour?"▾ contour":"▸ contour";pipEls.pt.style.color=S.pipContour?"#4285F4":"";pipEls.pt.style.fontWeight=S.pipContour?"700":"";
     const showView=S.pipContour&&hearOn;pipEls.po.style.display=pipEls.ps.style.display=showView?"":"none";pipEls.po.innerHTML=viewLabel(S.pipOverlay);
     d.documentElement.style.setProperty("--na",S.pipNoteArea+"px");d.documentElement.style.setProperty("--lh",S.pipLaneH+"px");
     d.getElementById("pn").textContent=S.pipNoteArea+" px";d.getElementById("plv").textContent=S.pipLaneH+" px";
+    d.getElementById("psv").textContent=Math.round(S.pipScale*100)+"%";d.body.style.zoom=S.pipScale;
     d.getElementById("plrow").style.display=S.pipContour?"":"none";};
   // every click is a user gesture, so the window may be resized to fit the new fixed heights
   const bump=(fn)=>()=>{fn();save();applyContour();try{pip.resizeTo(pip.outerWidth,pipHeight());}catch(e){}pipTick();};
+  d.getElementById("ps-").onclick=bump(()=>S.pipScale=Math.max(0.6,Math.round((S.pipScale-0.1)*10)/10));
+  d.getElementById("ps+").onclick=bump(()=>S.pipScale=Math.min(2,Math.round((S.pipScale+0.1)*10)/10));
   d.getElementById("pn-").onclick=bump(()=>S.pipNoteArea=Math.max(50,S.pipNoteArea-10));
   d.getElementById("pn+").onclick=bump(()=>S.pipNoteArea=Math.min(400,S.pipNoteArea+10));
   d.getElementById("pl-").onclick=bump(()=>S.pipLaneH=Math.max(40,S.pipLaneH-20));
@@ -740,7 +743,7 @@ function pipTick(){
   // contour under the notes: the same lane renderer, sized to the window; overlay = one lane, stacked = YOU over HEAR
   if(S.pipContour&&pip){
     const stacked=hearOn&&!S.pipOverlay;pip.document.body.classList.toggle("stacked",stacked);e.applyContour();
-    const fit=c=>{const dpr=pip.devicePixelRatio||1,cw=c.clientWidth,ch=c.clientHeight;if(!(cw>0&&ch>0))return null;
+    const fit=c=>{const dpr=(pip.devicePixelRatio||1)*(S.pipScale||1),cw=c.clientWidth,ch=c.clientHeight;if(!(cw>0&&ch>0))return null;
       const pw=Math.round(cw*dpr),phh=Math.round(ch*dpr);if(c.width!==pw||c.height!==phh){c.width=pw;c.height=phh;}
       c.getContext("2d").setTransform(dpr,0,0,dpr,0,0);return{W:cw,H:ch};};
     const r=laneRange();let f=fit(e.pl);

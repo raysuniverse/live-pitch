@@ -31,7 +31,7 @@ select{font:inherit;color:inherit}
 /* minimal: controls on two left-aligned rows under the title — row 1 size + view links, row 2 note + contour heights */
 .link{color:var(--grey);font-size:13px;padding:4px 8px;border-radius:100px}
 .link:hover{background:var(--panel)}
-.link.blue{color:var(--blue)}
+.link.blue{color:var(--blue);font-weight:700}
 .link .on,.chip .on{color:var(--blue);font-weight:700}
 .link .off,.chip .off{color:var(--faint)}
 /* start card */
@@ -681,7 +681,7 @@ async function openFloat(){
     <div class="tog"><span class="st">note <i id="pn-">−</i><b id="pn"></b><i id="pn+">+</i></span>
       <span class="st" id="plrow">contour <i id="pl-">−</i><b id="plv"></b><i id="pl+">+</i></span></div><canvas class="lane" id="pl"></canvas><canvas class="lane" id="pl2"></canvas></div><div class="hint" id="ph"></div>`;
   pipEls={yn:d.getElementById("yn"),yh:d.getElementById("yh"),hn:d.getElementById("hn"),hh:d.getElementById("hh"),hc:[...d.querySelectorAll(".hearcol")],ph:d.getElementById("ph"),yc:d.getElementById("yc"),hcap:d.getElementById("hcap"),pt:d.getElementById("pt"),pst:d.getElementById("pst"),pfull:d.getElementById("pfull"),pl:d.getElementById("pl"),pl2:d.getElementById("pl2"),po:d.getElementById("po"),ps:d.getElementById("ps")};
-  const applyContour=()=>{d.body.classList.toggle("nocontour",!S.pipContour);pipEls.pt.textContent=S.pipContour?"▾ contour":"▸ contour";pipEls.pt.style.color=S.pipContour?"#4285F4":"";
+  const applyContour=()=>{d.body.classList.toggle("nocontour",!S.pipContour);pipEls.pt.textContent=S.pipContour?"▾ contour":"▸ contour";pipEls.pt.style.color=S.pipContour?"#4285F4":"";pipEls.pt.style.fontWeight=S.pipContour?"700":"";
     const showView=S.pipContour&&hearOn;pipEls.po.style.display=pipEls.ps.style.display=showView?"":"none";pipEls.po.innerHTML=viewLabel(S.pipOverlay);
     d.documentElement.style.setProperty("--na",S.pipNoteArea+"px");d.documentElement.style.setProperty("--lh",S.pipLaneH+"px");
     d.getElementById("pn").textContent=S.pipNoteArea+" px";d.getElementById("plv").textContent=S.pipLaneH+" px";

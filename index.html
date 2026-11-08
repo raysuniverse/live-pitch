@@ -25,11 +25,15 @@ select{font:inherit;color:inherit}
 .brand{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap}
 .brand h1{font-size:22px;font-weight:700;margin:0;letter-spacing:-.01em}
 .brand .sub{color:var(--grey);font-size:13px;margin:0}
-.toplinks{flex-basis:100%;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
-.toplinks .lft{margin-right:auto;display:inline-flex;align-items:center;gap:10px}
-.toplinks .link{font-size:16px;padding:6px 10px}
+/* navigation row: one line, two groups; the font steps down when the column is narrow (minimal view, phones) */
+.top{container-type:inline-size}
+.toplinks{flex-basis:100%;display:flex;align-items:center;gap:10px;flex-wrap:nowrap;margin-top:4px;min-width:0}
+.toplinks .lft,.toplinks .rgt{display:inline-flex;align-items:center;gap:10px;white-space:nowrap}
+.toplinks .lft{margin-right:auto}
+.toplinks .link{font-size:16px;padding:6px 10px;white-space:nowrap}
 .toplinks .sep{color:var(--line);font-size:16px}
-.toplinks{margin-top:4px}
+@container (max-width:640px){.toplinks .link,.toplinks .sep{font-size:14px}.toplinks .link{padding:4px 6px}.toplinks .lft,.toplinks .rgt{gap:6px}}
+@container (max-width:470px){.toplinks .link,.toplinks .sep{font-size:12px}.toplinks .link{padding:4px 4px}.toplinks .lft,.toplinks .rgt{gap:4px}}
 /* minimal: controls on two left-aligned rows under the title — row 1 size + view links, row 2 note + contour heights */
 .link{color:var(--grey);font-size:13px;padding:4px 8px;border-radius:100px}
 .link:hover{background:var(--panel)}
@@ -97,7 +101,11 @@ details code{background:var(--panel);padding:1px 5px;border-radius:4px}
 body.minimal .only-full{display:none !important}
 body.minimal .shell,body.minimal .app{max-width:520px}
 body.minimal .lane{margin-top:6px}
-.steps{display:flex;justify-content:flex-end;align-items:center;gap:10px;flex-wrap:wrap;margin-top:12px}
+/* steppers row: one line; compacts in a narrow column (minimal view, phones, high zoom) */
+.app{container-type:inline-size}
+.steps{display:flex;justify-content:flex-end;align-items:center;gap:10px;flex-wrap:nowrap;margin-top:12px;white-space:nowrap;min-width:0}
+@container (max-width:640px){.steps{gap:6px}.steps .sublab{font-size:11px}.steps .stepper{height:26px}.steps .stepper button{width:26px;height:26px;font-size:16px}.steps .stepper .val{min-width:44px;font-size:12px}}
+@container (max-width:470px){.steps{gap:4px}.steps .sublab{font-size:10px}.steps .stepper button{width:22px}.steps .stepper .val{min-width:38px;font-size:11px}}
 /* phone */
 @media (max-width:560px){ .notes{gap:10px} }
 </style>
@@ -377,10 +385,11 @@ function build(){
     const f=document.createElement("button");f.className="link"+(pip?" blue":"");f.id="floatbtn";f.textContent=pip?"⧉ floating…":"⧉ float";
     f.title="Open the live notes in a small window that stays on top of Zoom and everything else (Chrome)";f.onclick=openFloat;lft.appendChild(f);
   }
+  const rgt=document.createElement("span");rgt.className="rgt";tl.appendChild(rgt);
   const t=document.createElement("button");t.className="link"+(contourOn?" blue":"");t.textContent=contourOn?"▾ contour":"▸ contour";
-  t.onclick=()=>{if(S.minimal)S.miniContour=!S.miniContour;else S.fullContour=!S.fullContour;save();build();};tl.appendChild(t);
-  if(contourOn){tl.appendChild(sep());const v=document.createElement("button");v.className="link";v.innerHTML=viewLabel(S.overlay);
-    v.title="click to switch between one shared lane and two stacked lanes";v.onclick=()=>{S.overlay=!S.overlay;save();build();};tl.appendChild(v);}
+  t.onclick=()=>{if(S.minimal)S.miniContour=!S.miniContour;else S.fullContour=!S.fullContour;save();build();};rgt.appendChild(t);
+  if(contourOn){rgt.appendChild(sep());const v=document.createElement("button");v.className="link";v.innerHTML=viewLabel(S.overlay);
+    v.title="click to switch between one shared lane and two stacked lanes";v.onclick=()=>{S.overlay=!S.overlay;save();build();};rgt.appendChild(v);}
   // steppers row, below the notes and above the contour: size / note / contour
   const r3=$("steps");r3.innerHTML="";
   const lab=(txt)=>{const l=document.createElement("span");l.className="sublab";l.textContent=txt;r3.appendChild(l);};

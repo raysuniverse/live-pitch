@@ -358,7 +358,7 @@ function build(){
     const b=document.createElement("button");b.className="link blue";b.textContent="⤢ full view";b.onclick=toggleMinimal;tl.appendChild(b);
     const t=document.createElement("button");t.className="link";t.textContent=S.miniContour?"▾ contour":"▸ contour";
     t.onclick=()=>{S.miniContour=!S.miniContour;save();build();};tl.appendChild(t);
-    if(S.miniContour){const v=document.createElement("button");v.className="link";v.textContent=S.overlay?"⧉ overlay":"▤ stacked";
+    if(S.miniContour){const v=document.createElement("button");v.className="link";v.textContent="stack/overlay";
       v.title="click to switch between one shared lane and two stacked lanes";v.onclick=()=>{S.overlay=!S.overlay;save();build();};tl.appendChild(v);}
     const l2=document.createElement("span");l2.className="sublab";l2.textContent="note";tl.appendChild(l2);
     ui.miniNote=stepper(tl,()=>S.noteAreaMini+" px",()=>setNote(-10),()=>setNote(10));
@@ -380,7 +380,8 @@ function build(){
     ui.rangesl=new NoteSlider($("rangesl"),["lo","hi"],rangeValues,setRange,()=>!S.rangeAuto,rangeManual,{lo:"low",hi:"high"});
     ui.heardAuto=chip($("heardauto"),"auto",()=>S.heard.auto,toggleHeardAuto);
     ui.rangeAuto=chip($("rangeauto"),"auto",()=>S.rangeAuto,()=>{S.rangeAuto=!S.rangeAuto;if(!S.rangeAuto){S.lo=autoLo;S.hi=autoHi;}save();refresh();});
-    ui.viewSeg=segmented($("viewseg"),["stacked","overlay"],()=>S.overlay?1:0,i=>{S.overlay=i===1;save();refresh();});
+    {const b=document.createElement("button");b.className="chip action";b.textContent="stack/overlay";b.title="switch between two stacked lanes and one shared lane";
+      b.onclick=()=>{S.overlay=!S.overlay;save();refresh();};$("viewseg").appendChild(b);ui.viewSeg={refresh(){}};}
     ui.spanSeg=segmented($("spanseg"),["5 s","10 s","20 s"],()=>({5:0,10:1,20:2})[S.span]??1,i=>{S.span=[5,10,20][i];save();refresh();});
     ui.heightStep=stepper($("heightstep"),()=>S.laneH+" px",()=>setLaneH(S.laneH-50),()=>setLaneH(S.laneH+50));
     ui.noteStep=stepper($("notestep"),()=>S.noteAreaFull+" px",()=>setNote(-10),()=>setNote(10));
@@ -662,7 +663,7 @@ async function openFloat(){
       <span class="st" id="plrow">contour <i id="pl-">−</i><b id="plv"></b><i id="pl+">+</i></span></div><canvas class="lane" id="pl"></canvas><canvas class="lane" id="pl2"></canvas></div><div class="hint" id="ph"></div>`;
   pipEls={yn:d.getElementById("yn"),yh:d.getElementById("yh"),hn:d.getElementById("hn"),hh:d.getElementById("hh"),hc:[...d.querySelectorAll(".hearcol")],ph:d.getElementById("ph"),yc:d.getElementById("yc"),hcap:d.getElementById("hcap"),pt:d.getElementById("pt"),pl:d.getElementById("pl"),pl2:d.getElementById("pl2"),po:d.getElementById("po"),ps:d.getElementById("ps")};
   const applyContour=()=>{d.body.classList.toggle("nocontour",!S.pipContour);pipEls.pt.textContent=S.pipContour?"▾ contour":"▸ contour";
-    const showView=S.pipContour&&hearOn;pipEls.po.style.display=pipEls.ps.style.display=showView?"":"none";pipEls.po.textContent=S.pipOverlay?"⧉ overlay":"▤ stacked";
+    const showView=S.pipContour&&hearOn;pipEls.po.style.display=pipEls.ps.style.display=showView?"":"none";pipEls.po.textContent="stack/overlay";
     d.documentElement.style.setProperty("--na",S.pipNoteArea+"px");d.documentElement.style.setProperty("--lh",S.pipLaneH+"px");
     d.getElementById("pn").textContent=S.pipNoteArea+" px";d.getElementById("plv").textContent=S.pipLaneH+" px";
     d.getElementById("plrow").style.display=S.pipContour?"":"none";};

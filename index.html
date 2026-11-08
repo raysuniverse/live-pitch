@@ -67,6 +67,11 @@ select{font:inherit;color:inherit}
 .row{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-top:10px}
 .row .lab{font-size:12px;font-weight:700;color:var(--grey);min-width:84px}
 .row .lab.green{color:var(--green)}
+/* "my targets" and "settings" match the navigation row's size (and its narrow-column steps) */
+.row .lab.nav{font-size:16px;font-weight:700;min-width:0}
+.row .link.nav{font-size:16px;padding:6px 10px}
+@container (max-width:640px){.row .lab.nav,.row .link.nav{font-size:13px}.row .link.nav{padding:4px 5px}}
+@container (max-width:470px){.row .lab.nav,.row .link.nav{font-size:11px}}
 .row .sublab{font-size:13px;color:var(--grey)}
 .spacer{flex:1}
 .panel{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:4px 14px 12px;margin-top:10px}
@@ -149,10 +154,10 @@ body.minimal .lane{margin-top:6px}
   </div>
 
   <div class="row only-full" id="targetrow">
-    <span class="lab green">my targets</span>
+    <span class="lab green nav">◎ my targets</span>
     <canvas class="slider" id="yousl"></canvas>
     <span class="spacer"></span>
-    <button class="link" id="gear">⚙ settings</button>
+    <button class="link nav" id="gear">⚙ settings</button>
   </div>
 
   <div class="panel hidden only-full" id="panel">

@@ -25,7 +25,7 @@ select{font:inherit;color:inherit}
 .brand{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap}
 .brand h1{font-size:22px;font-weight:700;margin:0;letter-spacing:-.01em}
 .brand .sub{color:var(--grey);font-size:13px;margin:0}
-.toplinks{display:flex;align-items:center;gap:10px}
+.toplinks{display:flex;align-items:center;gap:10px;flex-wrap:wrap;justify-content:flex-end}
 .link{color:var(--grey);font-size:13px;padding:4px 8px;border-radius:100px}
 .link:hover{background:var(--panel)}
 .link.blue{color:var(--blue)}
@@ -46,8 +46,8 @@ select{font:inherit;color:inherit}
 /* notes */
 .notes{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:14px}
 .col .cap{font-size:12px;font-weight:700;color:var(--grey);letter-spacing:.04em}
-.col .note{font-size:72px;font-weight:700;line-height:1.05;letter-spacing:-.02em;color:var(--faint);min-height:76px}
-.col .hz{font-size:22px;color:var(--faint);min-height:28px}
+.col .note{font-size:var(--note,72px);font-weight:700;line-height:1.05;letter-spacing:-.02em;color:var(--faint);min-height:calc(var(--note,72px)*1.06)}
+.col .hz{font-size:calc(var(--note,72px)*.3);color:var(--faint);min-height:calc(var(--note,72px)*.39)}
 .col .verdict{font-size:15px;color:var(--grey);min-height:22px;margin-top:2px}
 .col .peak{font-size:13px;color:var(--grey);min-height:20px}
 /* control rows */
@@ -86,10 +86,9 @@ details code{background:var(--panel);padding:1px 5px;border-radius:4px}
 /* minimal view */
 body.minimal .only-full{display:none !important}
 body.minimal .shell,body.minimal .app{max-width:520px}
-body.minimal .col .note{font-size:84px}
 body.minimal .lane{margin-top:12px}
 /* phone */
-@media (max-width:560px){ .col .note{font-size:56px} .notes{gap:10px} }
+@media (max-width:560px){ .notes{gap:10px} }
 </style>
 </head>
 <body>
@@ -147,7 +146,8 @@ body.minimal .lane{margin-top:12px}
       <span class="lab">display</span>
       <span class="sublab">view</span><span id="viewseg"></span>
       <span class="sublab">window</span><span id="spanseg"></span>
-      <span class="sublab">height</span><span id="heightstep"></span>
+      <span class="sublab">note</span><span id="notestep"></span>
+      <span class="sublab">contour</span><span id="heightstep"></span>
       <span class="sublab">range</span><span id="rangeauto"></span>
       <canvas class="slider" id="rangesl"></canvas>
     </div>
@@ -161,7 +161,7 @@ body.minimal .lane{margin-top:12px}
 
   <div class="stat only-full" id="stat"></div>
   <canvas class="lane" id="lane1"></canvas>
-  <canvas class="lane only-full" id="lane2"></canvas>
+  <canvas class="lane" id="lane2"></canvas>
   <canvas class="lvl only-full" id="lvl"></canvas>
   <div class="summary only-full" id="summary"></div>
 
@@ -252,7 +252,7 @@ class Source{
 /* ============ state ============ */
 const KEYS=["floor","home","ceiling"];
 const DEF={you:{floor:47,home:52,ceiling:64},heard:{auto:true,floor:null,home:null,ceiling:null},overlay:false,
-  rangeAuto:true,lo:43,hi:64,span:10,laneH:150,miniContour:true,pipContour:true,scale:1,minimalScale:1,minimal:false,settingsOpen:false,micId:"",hearId:""};
+  rangeAuto:true,lo:43,hi:64,span:10,laneH:150,miniContour:true,pipContour:true,pipOverlay:true,noteFull:72,noteMini:84,pipNote:1,pipLaneH:0,scale:1,minimalScale:1,minimal:false,settingsOpen:false,micId:"",hearId:""};
 let S; try{S=Object.assign({},DEF,JSON.parse(localStorage.getItem("livepitch.v1")||"{}"));S.you=Object.assign({},DEF.you,S.you);S.heard=Object.assign({},DEF.heard,S.heard);}catch(e){S=JSON.parse(JSON.stringify(DEF));}
 function save(){try{localStorage.setItem("livepitch.v1",JSON.stringify(S));}catch(e){}}
 
@@ -357,14 +357,21 @@ function build(){
     const b=document.createElement("button");b.className="link blue";b.textContent="⤢ full view";b.onclick=toggleMinimal;tl.appendChild(b);
     const t=document.createElement("button");t.className="link";t.textContent=S.miniContour?"▾ contour":"▸ contour";
     t.onclick=()=>{S.miniContour=!S.miniContour;save();build();};tl.appendChild(t);
+    if(S.miniContour){const v=document.createElement("button");v.className="link";v.textContent=S.overlay?"⧉ overlay":"▤ stacked";
+      v.title="click to switch between one shared lane and two stacked lanes";v.onclick=()=>{S.overlay=!S.overlay;save();build();};tl.appendChild(v);}
+    const l2=document.createElement("span");l2.className="sublab";l2.textContent="note";tl.appendChild(l2);
+    ui.miniNote=stepper(tl,()=>S.noteMini+" px",()=>setNote(-8),()=>setNote(8));
+    if(S.miniContour){const l3=document.createElement("span");l3.className="sublab";l3.textContent="contour";tl.appendChild(l3);
+      ui.miniLane=stepper(tl,()=>S.laneH+" px",()=>setLaneH(S.laneH-50),()=>setLaneH(S.laneH+50));}else ui.miniLane=null;
   }else{
     const b=document.createElement("button");b.className="link";b.textContent="▭ minimal";b.onclick=toggleMinimal;tl.appendChild(b);
+    ui.miniNote=null;ui.miniLane=null;
   }
   if("documentPictureInPicture" in window){
     const f=document.createElement("button");f.className="link";f.id="floatbtn";f.textContent=pip?"⧉ floating…":"⧉ float";
     f.title="Open the live notes in a small window that stays on top of Zoom and everything else (Chrome)";f.onclick=openFloat;tl.appendChild(f);
   }
-  document.body.classList.toggle("minimal",S.minimal);
+  document.body.classList.toggle("minimal",S.minimal);applyNote();
   $("app").style.zoom=S.minimal?S.minimalScale:S.scale;
   if(!ui.built){
     ui.yousl=new NoteSlider($("yousl"),KEYS,()=>Object.assign({},S.you),setYou);
@@ -375,6 +382,7 @@ function build(){
     ui.viewSeg=segmented($("viewseg"),["stacked","overlay"],()=>S.overlay?1:0,i=>{S.overlay=i===1;save();refresh();});
     ui.spanSeg=segmented($("spanseg"),["5 s","10 s","20 s"],()=>({5:0,10:1,20:2})[S.span]??1,i=>{S.span=[5,10,20][i];save();refresh();});
     ui.heightStep=stepper($("heightstep"),()=>S.laneH+" px",()=>setLaneH(S.laneH-50),()=>setLaneH(S.laneH+50));
+    ui.noteStep=stepper($("notestep"),()=>S.noteFull+" px",()=>setNote(-8),()=>setNote(8));
     $("copybtn").onclick=copyHeard;$("gear").onclick=()=>{S.settingsOpen=!S.settingsOpen;save();refresh();};
     $("csvbtn").onclick=downloadCsv;$("stopbtn").onclick=stop;
     $("startbtn").onclick=()=>start(false);$("demobtn").onclick=()=>start(true);
@@ -401,11 +409,14 @@ function refresh(){
   $("gear").textContent=S.settingsOpen?"⚙ settings ▴":"⚙ settings";$("gear").style.color=S.settingsOpen?BLUE:"";
   $("heardrow").style.display=hearOn?"":"none";$("hearcol").style.visibility=hearOn?"":"hidden";
   $("lane1").style.display=(S.minimal&&!S.miniContour)?"none":"";
-  $("lane2").style.display=(hearOn&&!S.overlay&&!S.minimal)?"":"none";
-  ["sizeStep","heardAuto","rangeAuto","viewSeg","spanSeg","heightStep"].forEach(k=>ui[k]&&ui[k].refresh());
+  $("lane2").style.display=(hearOn&&!S.overlay&&!(S.minimal&&!S.miniContour))?"":"none";
+  ["sizeStep","heardAuto","rangeAuto","viewSeg","spanSeg","heightStep","noteStep","miniNote","miniLane"].forEach(k=>ui[k]&&ui[k].refresh());
   ui.yousl.draw();ui.heardsl.draw();ui.rangesl.draw();
 }
 // lane height = vertical resolution: more pixels per semitone, and sharps + semitone grid lines appear once there is room
+// note / Hz size per view (full vs minimal), as a CSS variable the .note and .hz rules scale from
+function applyNote(){$("app").style.setProperty("--note",(S.minimal?S.noteMini:S.noteFull)+"px");}
+function setNote(d){const k=S.minimal?"noteMini":"noteFull";S[k]=Math.max(32,Math.min(240,S[k]+d));save();applyNote();refresh();}
 function setLaneH(v){S.laneH=Math.max(100,Math.min(600,Math.round(v/50)*50));save();layout();refresh();}
 function setScale(v){v=Math.round(Math.max(0.6,Math.min(2,v))*10)/10;if(S.minimal)S.minimalScale=v;else S.scale=v;save();$("app").style.zoom=S.minimal?S.minimalScale:S.scale;refresh();setTimeout(layout,0);}
 function toggleMinimal(){S.minimal=!S.minimal;save();build();}
@@ -563,7 +574,7 @@ function draw(){
   const {lo,hi,hl,tnow}=laneRange();
   const c1=$("lane1"),c2=$("lane2");
   if(!hearOn)lane(c1,lo,hi,tnow,"YOU",{you:true,hear:false,youLevels:true,heard:null});
-  else if(S.overlay||S.minimal)lane(c1,lo,hi,tnow,"YOU thick · HEAR thin",{you:true,hear:true,youLevels:true,heard:hl});
+  else if(S.overlay)lane(c1,lo,hi,tnow,"YOU thick · HEAR thin",{you:true,hear:true,youLevels:true,heard:hl});
   else{lane(c1,lo,hi,tnow,"YOU",{you:true,hear:false,youLevels:true,heard:hl,otherHome:true});lane(c2,lo,hi,tnow,"HEAR",{you:false,hear:true,youLevels:false,heard:hl,otherHome:true});}
 }
 function lane(c,lo,hi,tnow,caption,o){
@@ -619,19 +630,25 @@ async function openFloat(){
   const d=pip.document;
   d.head.innerHTML=`<meta charset="utf-8"><title>Live Pitch</title><style>
     html,body{margin:0;height:100%;background:#fff;font-family:"Google Sans",system-ui,-apple-system,Roboto,sans-serif;color:#202124;overflow:hidden}
-    .g{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);grid-template-rows:auto auto auto auto minmax(0,1fr);height:100%;padding:2vh 4vw 2vh;box-sizing:border-box;column-gap:4vw;align-content:start}
-    .tog{grid-column:1/-1;font-size:11px;color:#5F6368;cursor:pointer;user-select:none;margin-top:1vh;justify-self:end}
-    .tog:hover{color:#4285F4}
+    .g{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);grid-template-rows:auto auto auto auto var(--lh,minmax(0,1fr));height:100%;padding:2vh 4vw 2vh;box-sizing:border-box;column-gap:4vw;align-content:start}
+    .tog{grid-column:1/-1;display:flex;flex-wrap:wrap;justify-content:flex-end;align-items:center;gap:6px 10px;font-size:11px;color:#5F6368;user-select:none;margin-top:1vh}
+    .tog .st{display:inline-flex;align-items:center;gap:3px;color:#9AA0A6}.tog .st b{color:#5F6368;font-weight:600;min-width:3.5em;text-align:center}
+    .tog .st i{font-style:normal;display:inline-block;width:16px;height:16px;line-height:15px;text-align:center;border:1px solid #DADCE0;border-radius:50%;cursor:pointer;color:#5F6368}
+    .tog .st i:hover{background:#F1F3F4}
     .lane{grid-column:1/-1;display:block;width:100%;height:100%;min-height:50px;border:1px solid #DADCE0;border-radius:8px;box-sizing:border-box}
     body.nocontour .lane{display:none}
     body.nocontour .g{grid-template-rows:auto auto auto auto}
+    body.stacked:not(.nocontour) .g{grid-template-rows:auto auto auto auto var(--lh,minmax(0,1fr)) var(--lh,minmax(0,1fr))}
+    body:not(.stacked) #pl2{display:none}
+    #pl2{margin-top:4px}
+    .tog span{cursor:pointer}.tog span:hover{color:#4285F4}.tog .sep{color:#DADCE0;cursor:default}
     .g>*{min-width:0;overflow:hidden}
     .cap{font-size:clamp(9px,3.2vw,14px);font-weight:700;color:#5F6368;letter-spacing:.04em;line-height:1.3;min-height:2.6em}
     .cap .dev{font-weight:400;color:#9AA0A6;letter-spacing:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-    .note{font-size:min(22vw,40vh);font-weight:700;line-height:1;letter-spacing:-.02em;color:#9AA0A6;align-self:end}
-    .hz{font-size:min(8vw,14vh);color:#9AA0A6;margin-top:.4vh}
-    body:not(.nocontour) .note{font-size:min(18vw,22vh)}
-    body:not(.nocontour) .hz{font-size:min(6vw,8vh)}
+    .note{font-size:calc(min(22vw,40vh)*var(--ns,1));font-weight:700;line-height:1;letter-spacing:-.02em;color:#9AA0A6;align-self:end}
+    .hz{font-size:calc(min(8vw,14vh)*var(--ns,1));color:#9AA0A6;margin-top:.4vh}
+    body:not(.nocontour) .note{font-size:calc(min(18vw,22vh)*var(--ns,1))}
+    body:not(.nocontour) .hz{font-size:calc(min(6vw,8vh)*var(--ns,1))}
     .hint{position:absolute;left:0;right:0;bottom:1vh;text-align:center;font-size:clamp(9px,3vw,12px);color:#FA7B17}
   </style>`;
   // a 2×3 grid: captions share row 1, notes row 2, Hz row 3 — so both notes start at the same height
@@ -639,10 +656,23 @@ async function openFloat(){
     <div class="cap">YOU<div class="dev" id="yc"></div></div><div class="cap hearcol">HEAR<div class="dev" id="hcap"></div></div>
     <div class="note" id="yn">—</div><div class="note hearcol" id="hn">—</div>
     <div class="hz" id="yh"></div><div class="hz hearcol" id="hh"></div>
-    <div class="tog" id="pt"></div><canvas class="lane" id="pl"></canvas></div><div class="hint" id="ph"></div>`;
-  pipEls={yn:d.getElementById("yn"),yh:d.getElementById("yh"),hn:d.getElementById("hn"),hh:d.getElementById("hh"),hc:[...d.querySelectorAll(".hearcol")],ph:d.getElementById("ph"),yc:d.getElementById("yc"),hcap:d.getElementById("hcap"),pt:d.getElementById("pt"),pl:d.getElementById("pl")};
-  const applyContour=()=>{d.body.classList.toggle("nocontour",!S.pipContour);pipEls.pt.textContent=S.pipContour?"▾ contour":"▸ contour";};
-  pipEls.pt.onclick=()=>{S.pipContour=!S.pipContour;save();applyContour();pipTick();};applyContour();
+    <div class="tog"><span id="po"></span><span class="sep" id="ps"> · </span><span id="pt"></span>
+      <span class="st">note <i id="pn-">−</i><b id="pn"></b><i id="pn+">+</i></span>
+      <span class="st" id="plrow">contour <i id="pl-">−</i><b id="plv"></b><i id="pl+">+</i></span></div><canvas class="lane" id="pl"></canvas><canvas class="lane" id="pl2"></canvas></div><div class="hint" id="ph"></div>`;
+  pipEls={yn:d.getElementById("yn"),yh:d.getElementById("yh"),hn:d.getElementById("hn"),hh:d.getElementById("hh"),hc:[...d.querySelectorAll(".hearcol")],ph:d.getElementById("ph"),yc:d.getElementById("yc"),hcap:d.getElementById("hcap"),pt:d.getElementById("pt"),pl:d.getElementById("pl"),pl2:d.getElementById("pl2"),po:d.getElementById("po"),ps:d.getElementById("ps")};
+  const applyContour=()=>{d.body.classList.toggle("nocontour",!S.pipContour);pipEls.pt.textContent=S.pipContour?"▾ contour":"▸ contour";
+    const showView=S.pipContour&&hearOn;pipEls.po.style.display=pipEls.ps.style.display=showView?"":"none";pipEls.po.textContent=S.pipOverlay?"⧉ overlay":"▤ stacked";
+    d.documentElement.style.setProperty("--ns",S.pipNote);d.documentElement.style.setProperty("--lh",S.pipLaneH?S.pipLaneH+"px":"minmax(0,1fr)");
+    d.getElementById("pn").textContent=Math.round(S.pipNote*100)+"%";d.getElementById("plv").textContent=S.pipLaneH?S.pipLaneH+" px":"fill";
+    d.getElementById("plrow").style.display=S.pipContour?"":"none";};
+  const bump=(fn)=>()=>{fn();save();applyContour();pipTick();};
+  d.getElementById("pn-").onclick=bump(()=>S.pipNote=Math.max(0.4,Math.round((S.pipNote-0.1)*10)/10));
+  d.getElementById("pn+").onclick=bump(()=>S.pipNote=Math.min(2.5,Math.round((S.pipNote+0.1)*10)/10));
+  d.getElementById("pl-").onclick=bump(()=>S.pipLaneH=S.pipLaneH&&S.pipLaneH>60?S.pipLaneH-20:0);        // down to "fill"
+  d.getElementById("pl+").onclick=bump(()=>S.pipLaneH=S.pipLaneH?Math.min(600,S.pipLaneH+20):100);
+  pipEls.applyContour=applyContour;
+  pipEls.pt.onclick=()=>{S.pipContour=!S.pipContour;save();applyContour();pipTick();};
+  pipEls.po.onclick=()=>{S.pipOverlay=!S.pipOverlay;save();applyContour();pipTick();};applyContour();
   pip.addEventListener("pagehide",()=>{pip=null;pipEls=null;const b=$("floatbtn");if(b)b.textContent="⧉ float";});
   const b=$("floatbtn");if(b)b.textContent="⧉ floating…";
   if(!running){pipEls.ph.textContent="press Start on the main page";}
@@ -659,13 +689,18 @@ function pipTick(){
     if(hear.hz>0){const n=nOf(hear.hz);e.hn.textContent=nameOf(n);e.hn.style.color=specColour(n);e.hh.textContent=hear.hz.toFixed(0)+" Hz";e.hh.style.color=specColour(n);}
     else if(now>hear.holdUntil){e.hn.textContent="—";e.hn.style.color=FAINT;e.hh.textContent=now-hear.lastSignal>5?"silent":"";}}
   e.ph.textContent=running?"":"press Start on the main page";
-  // contour under the notes: the same lane renderer, sized to the window
-  if(S.pipContour&&pip){const c=e.pl,dpr=pip.devicePixelRatio||1,cw=c.clientWidth,ch=c.clientHeight;
-    if(cw>0&&ch>0){const pw=Math.round(cw*dpr),phh=Math.round(ch*dpr);
-      if(c.width!==pw||c.height!==phh){c.width=pw;c.height=phh;}
-      c.getContext("2d").setTransform(dpr,0,0,dpr,0,0);
-      const r=laneRange();
-      lane(c,r.lo,r.hi,r.tnow,hearOn?"YOU thick · HEAR thin":"YOU",{you:true,hear:hearOn,youLevels:true,heard:hearOn?r.hl:null,W:cw,H:ch});}}
+  // contour under the notes: the same lane renderer, sized to the window; overlay = one lane, stacked = YOU over HEAR
+  if(S.pipContour&&pip){
+    const stacked=hearOn&&!S.pipOverlay;pip.document.body.classList.toggle("stacked",stacked);e.applyContour();
+    const fit=c=>{const dpr=pip.devicePixelRatio||1,cw=c.clientWidth,ch=c.clientHeight;if(!(cw>0&&ch>0))return null;
+      const pw=Math.round(cw*dpr),phh=Math.round(ch*dpr);if(c.width!==pw||c.height!==phh){c.width=pw;c.height=phh;}
+      c.getContext("2d").setTransform(dpr,0,0,dpr,0,0);return{W:cw,H:ch};};
+    const r=laneRange();let f=fit(e.pl);
+    if(f){if(!hearOn)lane(e.pl,r.lo,r.hi,r.tnow,"YOU",Object.assign({you:true,hear:false,youLevels:true,heard:null},f));
+      else if(!stacked)lane(e.pl,r.lo,r.hi,r.tnow,"YOU thick · HEAR thin",Object.assign({you:true,hear:true,youLevels:true,heard:r.hl},f));
+      else lane(e.pl,r.lo,r.hi,r.tnow,"YOU",Object.assign({you:true,hear:false,youLevels:true,heard:r.hl,otherHome:true},f));}
+    if(stacked&&(f=fit(e.pl2)))lane(e.pl2,r.lo,r.hi,r.tnow,"HEAR",Object.assign({you:false,hear:true,youLevels:false,heard:r.hl,otherHome:true},f));
+  }
 }
 
 /* ============ keys ============ */

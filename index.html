@@ -167,7 +167,6 @@ body.minimal #ministeps{display:flex}
       <span class="lab">session</span>
       <button class="chip action" id="csvbtn">⬇ download log (CSV)</button>
       <button class="chip" id="stopbtn">■ stop &amp; summarise</button>
-      <button class="chip" id="resetbtn" title="contour shown as overlay, targets B2 / E3 / F4, default sizes; keeps your mic and loopback choice">↺ reset to defaults</button>
       <span class="sublab" id="devnote"></span>
     </div>
   </div>
@@ -266,8 +265,7 @@ class Source{
 
 /* ============ state ============ */
 const KEYS=["floor","home","ceiling"];
-// default targets: B2 / E3 / F4
-const DEF={you:{floor:47,home:52,ceiling:65},heard:{auto:true,floor:null,home:null,ceiling:null},overlay:true,fullContour:true,overlayDefaulted:true,
+const DEF={you:{floor:47,home:52,ceiling:64},heard:{auto:true,floor:null,home:null,ceiling:null},overlay:true,fullContour:true,overlayDefaulted:true,
   rangeAuto:true,lo:43,hi:64,span:10,laneH:150,miniContour:true,pipContour:true,pipOverlay:true,noteAreaFull:104,noteAreaMini:120,pipNoteArea:110,pipLaneH:140,scale:1,minimalScale:1,minimal:false,settingsOpen:false,micId:"",hearId:""};
 let S; try{S=Object.assign({},DEF,JSON.parse(localStorage.getItem("livepitch.v1")||"{}"));S.you=Object.assign({},DEF.you,S.you);S.heard=Object.assign({},DEF.heard,S.heard);
   if(!JSON.parse(localStorage.getItem("livepitch.v1")||"{}").overlayDefaulted){S.overlay=true;S.overlayDefaulted=true;}   // 2026-11-08: overlay became the default
@@ -387,7 +385,6 @@ function build(){
     t.onclick=()=>{S.miniContour=!S.miniContour;save();build();};r1.appendChild(t);
     // note / contour steppers sit just above the contour chart, as in the float
     const r3=$("ministeps");r3.innerHTML="";
-    const rd=document.createElement("button");rd.className="link lft";rd.textContent="↺ defaults";rd.title="contour shown as overlay, targets B2 / E3 / F4, default sizes";rd.onclick=resetDefaults;r3.appendChild(rd);
     const l2=document.createElement("span");l2.className="sublab";l2.textContent="note";r3.appendChild(l2);
     ui.miniNote=stepper(r3,()=>S.noteAreaMini+" px",()=>setNote(-10),()=>setNote(10));
     if(S.miniContour){const l3=document.createElement("span");l3.className="sublab";l3.textContent="contour";r3.appendChild(l3);
@@ -416,7 +413,7 @@ function build(){
     ui.heightStep=stepper($("heightstep"),()=>S.laneH+" px",()=>setLaneH(S.laneH-50),()=>setLaneH(S.laneH+50));
     ui.noteStep=stepper($("notestep"),()=>S.noteAreaFull+" px",()=>setNote(-10),()=>setNote(10));
     $("copybtn").onclick=copyHeard;$("gear").onclick=()=>{S.settingsOpen=!S.settingsOpen;save();refresh();};
-    $("csvbtn").onclick=downloadCsv;$("stopbtn").onclick=stop;$("resetbtn").onclick=resetDefaults;
+    $("csvbtn").onclick=downloadCsv;$("stopbtn").onclick=stop;
     $("startbtn").onclick=()=>start(false);$("demobtn").onclick=()=>start(true);
     $("micsel").onchange=()=>{S.micId=$("micsel").value;save();if(running&&!demo)start(false);};
     $("hearsel").onchange=()=>{S.hearId=$("hearsel").value;save();if(running&&!demo)start(false);};
@@ -455,12 +452,6 @@ function applyNote(){$("app").style.setProperty("--na",(S.minimal?S.noteAreaMini
 function setNote(d){const k=S.minimal?"noteAreaMini":"noteAreaFull";S[k]=Math.max(50,Math.min(400,S[k]+d));save();applyNote();refresh();}
 // "stack/overlay" with the active word highlighted
 function viewLabel(overlay){return `<span class="${overlay?"off":"on"}">stack</span>/<span class="${overlay?"on":"off"}">overlay</span>`;}
-// back to the shipped defaults: contour shown as overlay in every view, targets B2 / E3 / F4, default sizes; device choices are kept
-function resetDefaults(){
-  const keep={micId:S.micId,hearId:S.hearId,settingsOpen:true,minimal:S.minimal};
-  S=Object.assign(JSON.parse(JSON.stringify(DEF)),keep);det=null;save();build();
-  if(pipEls){pipEls.applyContour();try{pip.resizeTo(pip.outerWidth,pipHeight());}catch(e){}pipTick();}
-}
 function setLaneH(v){S.laneH=Math.max(100,Math.min(600,Math.round(v/50)*50));save();layout();refresh();}
 function setScale(v){v=Math.round(Math.max(0.6,Math.min(2,v))*10)/10;if(S.minimal)S.minimalScale=v;else S.scale=v;save();$("app").style.zoom=S.minimal?S.minimalScale:S.scale;refresh();setTimeout(layout,0);}
 function toggleMinimal(){S.minimal=!S.minimal;save();build();}
@@ -702,7 +693,7 @@ async function openFloat(){
     <div class="note" id="yn">—</div><div class="note hearcol" id="hn">—</div>
     <div class="hz" id="yh"></div><div class="hz hearcol" id="hh"></div>
     <div class="tog"><span class="lft"><span id="pst"></span><span class="sep"> · </span><span id="pfull">⤢ full view</span></span><span id="po"></span><span class="sep" id="ps"> · </span><span id="pt"></span></div>
-    <div class="tog"><span class="lft"><span id="prd" title="contour shown as overlay, targets B2 / E3 / F4, default sizes">↺ defaults</span></span><span class="st">note <i id="pn-">−</i><b id="pn"></b><i id="pn+">+</i></span>
+    <div class="tog"><span class="st">note <i id="pn-">−</i><b id="pn"></b><i id="pn+">+</i></span>
       <span class="st" id="plrow">contour <i id="pl-">−</i><b id="plv"></b><i id="pl+">+</i></span></div><canvas class="lane" id="pl"></canvas><canvas class="lane" id="pl2"></canvas></div><div class="hint" id="ph"></div>`;
   pipEls={yn:d.getElementById("yn"),yh:d.getElementById("yh"),hn:d.getElementById("hn"),hh:d.getElementById("hh"),hc:[...d.querySelectorAll(".hearcol")],ph:d.getElementById("ph"),yc:d.getElementById("yc"),hcap:d.getElementById("hcap"),pt:d.getElementById("pt"),pst:d.getElementById("pst"),pfull:d.getElementById("pfull"),pl:d.getElementById("pl"),pl2:d.getElementById("pl2"),po:d.getElementById("po"),ps:d.getElementById("ps")};
   const applyContour=()=>{d.body.classList.toggle("nocontour",!S.pipContour);pipEls.pt.textContent=S.pipContour?"▾ contour":"▸ contour";pipEls.pt.style.color=S.pipContour?"#4285F4":"";
@@ -717,7 +708,7 @@ async function openFloat(){
   d.getElementById("pl-").onclick=bump(()=>S.pipLaneH=Math.max(40,S.pipLaneH-20));
   d.getElementById("pl+").onclick=bump(()=>S.pipLaneH=Math.min(600,S.pipLaneH+20));
   pipEls.applyContour=applyContour;
-  pipEls.pst.onclick=()=>start(false);d.getElementById("prd").onclick=resetDefaults;
+  pipEls.pst.onclick=()=>start(false);
   pipEls.pfull.onclick=()=>{if(S.minimal)toggleMinimal();try{window.focus();}catch(e){}};
   pipEls.pt.onclick=bump(()=>S.pipContour=!S.pipContour);
   pipEls.po.onclick=bump(()=>S.pipOverlay=!S.pipOverlay);applyContour();

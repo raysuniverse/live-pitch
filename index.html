@@ -199,7 +199,7 @@ body.minimal .lane{margin-top:6px}
     <p><b>Anything inside Chrome</b> (a YouTube clip, Zoom in the browser): choose “a browser tab”, then pick that tab and tick “Share tab audio”.</p>
     <p>Colours are the <b>note itself</b>: violet E2 → blue A2 → cyan D3 → green G3 → olive A#3 → orange C#4 → pink E4 → red G#4. The top is deliberately loud so a jump is obvious even after your voice has come back down.</p>
     <p><b>Keep it over Zoom:</b> in Chrome, <b>⧉ float</b> (top right) opens the two live notes in a small window that stays on top of every other app; drag its edges to resize.</p>
-    <div class="keys"><span><b>↑ ↓</b> move my three targets</span><span><b>a</b> their levels auto</span><span><b>c</b> copy theirs to mine</span><span><b>o</b> overlay / stacked</span><span><b>r</b> range auto</span><span><b>+ −</b> size</span><span><b>m</b> minimal view</span><span><b>[ ]</b> contour height</span><span><b>d</b> download log</span></div>
+    <div class="keys"><span><b>s</b> start / restart</span><span><b>c</b> show / hide contour</span><span><b>o</b> overlay / stacked</span><span><b>[ ]</b> contour height</span><span><b>+ −</b> size</span><span><b>↑ ↓</b> move my three targets</span><span><b>a</b> their levels auto</span><span><b>t</b> copy theirs to mine</span><span><b>r</b> range auto</span><span><b>m</b> minimal view</span><span><b>d</b> download log</span></div>
   </details>
 </div>
 
@@ -770,7 +770,9 @@ function onKey(e,inPip){
   const brL=k==="["||code==="BracketLeft",brR=k==="]"||code==="BracketRight";
   const pipRefit=()=>{save();if(pipEls){pipEls.applyContour();try{pip.resizeTo(Math.max(pip.outerWidth,Math.round(420*(S.pipScale||1))),pipHeight());}catch(err){}pipTick();}};
   if(k==="ArrowUp"){shiftYou(1);e.preventDefault();}else if(k==="ArrowDown"){shiftYou(-1);e.preventDefault();}
-  else if(k==="a")toggleHeardAuto();else if(k==="c")copyHeard();
+  else if(k==="s")start(false);
+  else if(k==="c"){if(inPip){S.pipContour=!S.pipContour;pipRefit();}else{if(S.minimal)S.miniContour=!S.miniContour;else S.fullContour=!S.fullContour;save();build();}}
+  else if(k==="a")toggleHeardAuto();else if(k==="t")copyHeard();
   else if(k==="o"){if(inPip){S.pipOverlay=!S.pipOverlay;pipRefit();}else{S.overlay=!S.overlay;save();build();}}
   else if(k==="r"){S.rangeAuto=!S.rangeAuto;if(!S.rangeAuto){S.lo=autoLo;S.hi=autoHi;}save();refresh();}
   else if(plus){if(inPip){S.pipScale=Math.min(2,Math.round((S.pipScale+0.1)*10)/10);pipRefit();}else setScale((S.minimal?S.minimalScale:S.scale)+0.1);}
@@ -778,7 +780,6 @@ function onKey(e,inPip){
   else if(k==="m")toggleMinimal();else if(k==="d")downloadCsv();
   else if(brR){if(inPip){S.pipLaneH=Math.min(600,S.pipLaneH+20);pipRefit();}else setLaneH(S.laneH+50);}
   else if(brL){if(inPip){S.pipLaneH=Math.max(40,S.pipLaneH-20);pipRefit();}else setLaneH(S.laneH-50);}
-  else if(k==="s"&&inPip)start(false);
 }
 document.addEventListener("keydown",e=>onKey(e,false));
 

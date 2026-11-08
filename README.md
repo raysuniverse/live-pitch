@@ -21,15 +21,18 @@ Views: full page, **▭ minimal** (notes + contour only), and **⧉ float** (a s
 
 | Key | Action |
 |-----|--------|
+| **s** | start / restart |
+| **c** | show / hide the contour |
+| **o** | overlay / stacked lanes |
+| **[ ]** | contour height |
+| **+ −** | size |
 | ↑ / ↓ | move all three targets |
 | a | their levels: auto / manual |
-| c | copy their levels to my targets |
-| o | stack / overlay |
+| t | copy their levels to my targets |
 | r | display range: auto / manual |
-| + / − | size · [ / ] contour height |
 | m | minimal view · d download the log (CSV) |
 
-The same keys work inside the float (there, o / + − / [ ] change the float's own view, and **s** starts).
+The same keys work inside the float (click in it first; there, c / o / + − / [ ] change the float's own view).
 
 ## Hearing what your computer plays
 

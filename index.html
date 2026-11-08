@@ -32,8 +32,9 @@ select{font:inherit;color:inherit}
 .toplinks .lft{margin-right:auto}
 .toplinks .link{font-size:16px;padding:6px 10px;white-space:nowrap}
 .toplinks .sep{color:var(--line);font-size:16px}
-@container (max-width:640px){.toplinks .link,.toplinks .sep{font-size:14px}.toplinks .link{padding:4px 6px}.toplinks .lft,.toplinks .rgt{gap:6px}}
-@container (max-width:470px){.toplinks .link,.toplinks .sep{font-size:12px}.toplinks .link{padding:4px 4px}.toplinks .lft,.toplinks .rgt{gap:4px}}
+@container (max-width:640px){.toplinks .link,.toplinks .sep{font-size:13px}.toplinks .link{padding:4px 5px}.toplinks{gap:6px}.toplinks .lft,.toplinks .rgt{gap:5px}}
+@container (max-width:470px){.toplinks .link,.toplinks .sep{font-size:11px}.toplinks .link{padding:3px 3px}.toplinks .lft,.toplinks .rgt{gap:3px}}
+@container (max-width:380px){.toplinks .sep{display:none}.toplinks .link{font-size:10px}}
 /* minimal: controls on two left-aligned rows under the title — row 1 size + view links, row 2 note + contour heights */
 .link{color:var(--grey);font-size:13px;padding:4px 8px;border-radius:100px}
 .link:hover{background:var(--panel)}

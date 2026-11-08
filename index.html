@@ -587,15 +587,19 @@ async function openFloat(){
   const d=pip.document;
   d.head.innerHTML=`<meta charset="utf-8"><title>Live Pitch</title><style>
     html,body{margin:0;height:100%;background:#fff;font-family:"Google Sans",system-ui,-apple-system,Roboto,sans-serif;color:#202124;overflow:hidden}
-    .g{display:grid;grid-template-columns:1fr 1fr;height:100%;padding:3vh 4vw;box-sizing:border-box;gap:4vw}
-    .cap{font-size:clamp(9px,3.2vw,14px);font-weight:700;color:#5F6368;letter-spacing:.04em}
-    .note{font-size:min(24vw,46vh);font-weight:700;line-height:1;letter-spacing:-.02em;color:#9AA0A6}
-    .hz{font-size:min(8vw,15vh);color:#9AA0A6;margin-top:.4vh}
+    .g{display:grid;grid-template-columns:1fr 1fr;grid-template-rows:auto auto auto;height:100%;padding:3vh 4vw 0;box-sizing:border-box;column-gap:4vw;align-content:start}
+    .cap{font-size:clamp(9px,3.2vw,14px);font-weight:700;color:#5F6368;letter-spacing:.04em;line-height:1.3;min-height:2.6em}
+    .cap .dev{font-weight:400;color:#9AA0A6;letter-spacing:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:42vw}
+    .note{font-size:min(22vw,40vh);font-weight:700;line-height:1;letter-spacing:-.02em;color:#9AA0A6;align-self:end}
+    .hz{font-size:min(8vw,14vh);color:#9AA0A6;margin-top:.4vh}
     .hint{position:absolute;left:0;right:0;bottom:1vh;text-align:center;font-size:clamp(9px,3vw,12px);color:#FA7B17}
   </style>`;
-  d.body.innerHTML=`<div class="g"><div><div class="cap" id="yc">YOU</div><div class="note" id="yn">—</div><div class="hz" id="yh"></div></div>
-    <div id="hc"><div class="cap" id="hcap">HEAR</div><div class="note" id="hn">—</div><div class="hz" id="hh"></div></div></div><div class="hint" id="ph"></div>`;
-  pipEls={yn:d.getElementById("yn"),yh:d.getElementById("yh"),hn:d.getElementById("hn"),hh:d.getElementById("hh"),hc:d.getElementById("hc"),ph:d.getElementById("ph"),yc:d.getElementById("yc"),hcap:d.getElementById("hcap")};
+  // a 2×3 grid: captions share row 1, notes row 2, Hz row 3 — so both notes start at the same height
+  d.body.innerHTML=`<div class="g">
+    <div class="cap">YOU<div class="dev" id="yc"></div></div><div class="cap hearcol">HEAR<div class="dev" id="hcap"></div></div>
+    <div class="note" id="yn">—</div><div class="note hearcol" id="hn">—</div>
+    <div class="hz" id="yh"></div><div class="hz hearcol" id="hh"></div></div><div class="hint" id="ph"></div>`;
+  pipEls={yn:d.getElementById("yn"),yh:d.getElementById("yh"),hn:d.getElementById("hn"),hh:d.getElementById("hh"),hc:[...d.querySelectorAll(".hearcol")],ph:d.getElementById("ph"),yc:d.getElementById("yc"),hcap:d.getElementById("hcap")};
   pip.addEventListener("pagehide",()=>{pip=null;pipEls=null;const b=$("floatbtn");if(b)b.textContent="⧉ float";});
   const b=$("floatbtn");if(b)b.textContent="⧉ floating…";
   if(!running){pipEls.ph.textContent="press Start on the main page";}
@@ -604,11 +608,11 @@ async function openFloat(){
 function pipTick(){
   if(!pipEls)return;
   const e=pipEls,now=performance.now()/1000;
-  e.yc.textContent="YOU"+(you.label?" · "+you.label.replace(/\s*\(.*\)$/,""):"");
+  e.yc.textContent=you.label?you.label.replace(/\s*\(.*\)$/,""):"";
   if(you.hz>0){const n=nOf(you.hz);e.yn.textContent=nameOf(n);e.yn.style.color=specColour(n);e.yh.textContent=you.hz.toFixed(0)+" Hz";e.yh.style.color=specColour(n);}
   else if(now>you.holdUntil){e.yn.textContent="—";e.yn.style.color=FAINT;e.yh.textContent="";}
-  e.hc.style.visibility=hearOn?"":"hidden";
-  if(hearOn){e.hcap.textContent="HEAR"+(hear.label?" · "+hear.label.replace(/\s*\(.*\)$/,""):"");
+  e.hc.forEach(el=>el.style.visibility=hearOn?"":"hidden");
+  if(hearOn){e.hcap.textContent=hear.label?hear.label.replace(/\s*\(.*\)$/,""):"";
     if(hear.hz>0){const n=nOf(hear.hz);e.hn.textContent=nameOf(n);e.hn.style.color=specColour(n);e.hh.textContent=hear.hz.toFixed(0)+" Hz";e.hh.style.color=specColour(n);}
     else if(now>hear.holdUntil){e.hn.textContent="—";e.hn.style.color=FAINT;e.hh.textContent=now-hear.lastSignal>5?"silent":"";}}
   e.ph.textContent=running?"":"press Start on the main page";

@@ -27,7 +27,9 @@ select{font:inherit;color:inherit}
 .brand .sub{color:var(--grey);font-size:13px;margin:0}
 .toplinks{flex-basis:100%;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
 .toplinks .lft{margin-right:auto;display:inline-flex;align-items:center;gap:10px}
-.toplinks .sep{color:var(--line)}
+.toplinks .link{font-size:16px;padding:6px 10px}
+.toplinks .sep{color:var(--line);font-size:16px}
+.toplinks{margin-top:4px}
 /* minimal: controls on two left-aligned rows under the title — row 1 size + view links, row 2 note + contour heights */
 .link{color:var(--grey);font-size:13px;padding:4px 8px;border-radius:100px}
 .link:hover{background:var(--panel)}
@@ -645,7 +647,7 @@ function drawLevels(){
 /* ============ floating window (Document Picture-in-Picture, Chrome 116+) ============ */
 let pip=null,pipEls=null;
 // window height that exactly fits the fixed rows: padding + captions + note block + toggle row + lane(s) + title bar allowance
-function pipHeight(){const lanes=S.pipContour?(hearOn&&!S.pipOverlay?2*S.pipLaneH+4:S.pipLaneH):0;return 16+32+S.pipNoteArea+48+lanes+40;}
+function pipHeight(){const lanes=S.pipContour?(hearOn&&!S.pipOverlay?2*S.pipLaneH+4:S.pipLaneH):0;return 16+32+S.pipNoteArea+54+lanes+40;}
 async function openFloat(){
   if(pip){pip.focus();return;}
   try{pip=await documentPictureInPicture.requestWindow({width:420,height:pipHeight()});}
@@ -653,15 +655,16 @@ async function openFloat(){
   const d=pip.document;
   d.head.innerHTML=`<meta charset="utf-8"><title>Live Pitch</title><style>
     html,body{margin:0;height:100%;background:#fff;font-family:"Google Sans",system-ui,-apple-system,Roboto,sans-serif;color:#202124;overflow:hidden}
-    .g{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);grid-template-rows:24px 32px auto auto 24px var(--lh,140px);padding:8px 14px 8px;box-sizing:border-box;column-gap:16px;align-content:start}
+    .g{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);grid-template-rows:30px 32px auto auto 24px var(--lh,140px);padding:8px 14px 8px;box-sizing:border-box;column-gap:16px;align-content:start}
     .tog{grid-column:1/-1;display:flex;flex-wrap:nowrap;justify-content:flex-end;align-items:center;gap:6px 10px;font-size:11px;color:#5F6368;user-select:none;height:24px;overflow:hidden;white-space:nowrap}
+    .tog.nav{font-size:14px;height:30px;gap:6px 14px}.tog.nav .lft{gap:8px}
     .tog .st{display:inline-flex;align-items:center;gap:3px;color:#9AA0A6}.tog .st b{color:#5F6368;font-weight:600;min-width:3.5em;text-align:center}
     .tog .st i{font-style:normal;display:inline-block;width:16px;height:16px;line-height:15px;text-align:center;border:1px solid #DADCE0;border-radius:50%;cursor:pointer;color:#5F6368}
     .tog .st i:hover{background:#F1F3F4}
     .lane{grid-column:1/-1;display:block;width:100%;height:100%;min-height:50px;border:1px solid #DADCE0;border-radius:8px;box-sizing:border-box}
     body.nocontour .lane{display:none}
-    body.nocontour .g{grid-template-rows:24px 32px auto auto 24px}
-    body.stacked:not(.nocontour) .g{grid-template-rows:24px 32px auto auto 24px var(--lh,140px) var(--lh,140px)}
+    body.nocontour .g{grid-template-rows:30px 32px auto auto 24px}
+    body.stacked:not(.nocontour) .g{grid-template-rows:30px 32px auto auto 24px var(--lh,140px) var(--lh,140px)}
     body:not(.stacked) #pl2{display:none}
     #pl2{margin-top:4px}
     .tog>span{cursor:pointer}.tog .st{cursor:default}.tog .lft{margin-right:auto;display:inline-flex;gap:6px}.tog .lft span{cursor:pointer}.tog .lft .sep{cursor:default}.tog .go{color:#4285F4;font-weight:600}.tog .on{color:#4285F4;font-weight:700}.tog .off{color:#BDC1C6}.tog span:hover{color:#4285F4}.tog .sep{color:#DADCE0;cursor:default}
@@ -674,7 +677,7 @@ async function openFloat(){
   </style>`;
   // a 2×3 grid: captions share row 1, notes row 2, Hz row 3 — so both notes start at the same height
   d.body.innerHTML=`<div class="g">
-    <div class="tog"><span class="lft"><span id="pst"></span><span class="sep"> · </span><span id="pfull">⤢ full view</span></span><span id="pt"></span><span class="sep" id="ps"> · </span><span id="po"></span></div>
+    <div class="tog nav"><span class="lft"><span id="pst"></span><span class="sep"> · </span><span id="pfull">⤢ full view</span></span><span id="pt"></span><span class="sep" id="ps"> · </span><span id="po"></span></div>
     <div class="cap">YOU<div class="dev" id="yc"></div></div><div class="cap hearcol">HEAR<div class="dev" id="hcap"></div></div>
     <div class="note" id="yn">—</div><div class="note hearcol" id="hn">—</div>
     <div class="hz" id="yh"></div><div class="hz hearcol" id="hh"></div>

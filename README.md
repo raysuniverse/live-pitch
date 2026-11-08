@@ -29,6 +29,8 @@ Views: full page, **▭ minimal** (notes + contour only), and **⧉ float** (a s
 | + / − | size · [ / ] contour height |
 | m | minimal view · d download the log (CSV) |
 
+The same keys work inside the float (there, o / + − / [ ] change the float's own view, and **s** starts).
+
 ## Hearing what your computer plays
 
 Browsers can only listen to inputs, so system audio must come back through a virtual input.

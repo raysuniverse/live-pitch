@@ -266,7 +266,8 @@ class Source{
 
 /* ============ state ============ */
 const KEYS=["floor","home","ceiling"];
-const DEF={you:{floor:47,home:52,ceiling:65},   // B2 / E3 / F4heard:{auto:true,floor:null,home:null,ceiling:null},overlay:true,fullContour:true,overlayDefaulted:true,
+// default targets: B2 / E3 / F4
+const DEF={you:{floor:47,home:52,ceiling:65},heard:{auto:true,floor:null,home:null,ceiling:null},overlay:true,fullContour:true,overlayDefaulted:true,
   rangeAuto:true,lo:43,hi:64,span:10,laneH:150,miniContour:true,pipContour:true,pipOverlay:true,noteAreaFull:104,noteAreaMini:120,pipNoteArea:110,pipLaneH:140,scale:1,minimalScale:1,minimal:false,settingsOpen:false,micId:"",hearId:""};
 let S; try{S=Object.assign({},DEF,JSON.parse(localStorage.getItem("livepitch.v1")||"{}"));S.you=Object.assign({},DEF.you,S.you);S.heard=Object.assign({},DEF.heard,S.heard);
   if(!JSON.parse(localStorage.getItem("livepitch.v1")||"{}").overlayDefaulted){S.overlay=true;S.overlayDefaulted=true;}   // 2026-11-08: overlay became the default

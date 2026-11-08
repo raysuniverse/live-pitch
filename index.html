@@ -252,9 +252,11 @@ class Source{
 
 /* ============ state ============ */
 const KEYS=["floor","home","ceiling"];
-const DEF={you:{floor:47,home:52,ceiling:64},heard:{auto:true,floor:null,home:null,ceiling:null},overlay:false,
+const DEF={you:{floor:47,home:52,ceiling:64},heard:{auto:true,floor:null,home:null,ceiling:null},overlay:true,fullContour:true,overlayDefaulted:true,
   rangeAuto:true,lo:43,hi:64,span:10,laneH:150,miniContour:true,pipContour:true,pipOverlay:true,noteAreaFull:104,noteAreaMini:120,pipNoteArea:110,pipLaneH:140,scale:1,minimalScale:1,minimal:false,settingsOpen:false,micId:"",hearId:""};
-let S; try{S=Object.assign({},DEF,JSON.parse(localStorage.getItem("livepitch.v1")||"{}"));S.you=Object.assign({},DEF.you,S.you);S.heard=Object.assign({},DEF.heard,S.heard);}catch(e){S=JSON.parse(JSON.stringify(DEF));}
+let S; try{S=Object.assign({},DEF,JSON.parse(localStorage.getItem("livepitch.v1")||"{}"));S.you=Object.assign({},DEF.you,S.you);S.heard=Object.assign({},DEF.heard,S.heard);
+  if(!JSON.parse(localStorage.getItem("livepitch.v1")||"{}").overlayDefaulted){S.overlay=true;S.overlayDefaulted=true;}   // 2026-11-08: overlay became the default
+}catch(e){S=JSON.parse(JSON.stringify(DEF));}
 function save(){try{localStorage.setItem("livepitch.v1",JSON.stringify(S));}catch(e){}}
 
 const you=new Source("you",80), hear=new Source("hear",60,true);
@@ -366,6 +368,8 @@ function build(){
       ui.miniLane=stepper(tl,()=>S.laneH+" px",()=>setLaneH(S.laneH-50),()=>setLaneH(S.laneH+50));}else ui.miniLane=null;
   }else{
     const b=document.createElement("button");b.className="link";b.textContent="▭ minimal";b.onclick=toggleMinimal;tl.appendChild(b);
+    const t=document.createElement("button");t.className="link";t.textContent=S.fullContour?"▾ contour":"▸ contour";
+    t.onclick=()=>{S.fullContour=!S.fullContour;save();build();};tl.appendChild(t);
     ui.miniNote=null;ui.miniLane=null;
   }
   if("documentPictureInPicture" in window){
@@ -410,8 +414,10 @@ function refresh(){
   $("panel").classList.toggle("hidden",!S.settingsOpen);
   $("gear").textContent=S.settingsOpen?"⚙ settings ▴":"⚙ settings";$("gear").style.color=S.settingsOpen?BLUE:"";
   $("heardrow").style.display=hearOn?"":"none";$("hearcol").style.visibility=hearOn?"":"hidden";
-  $("lane1").style.display=(S.minimal&&!S.miniContour)?"none":"";
-  $("lane2").style.display=(hearOn&&!S.overlay&&!(S.minimal&&!S.miniContour))?"":"none";
+  const contour=S.minimal?S.miniContour:S.fullContour;
+  $("lane1").style.display=contour?"":"none";
+  $("lane2").style.display=(contour&&hearOn&&!S.overlay)?"":"none";
+  $("lvl").style.display=(contour&&!S.minimal)?"":"none";
   ["sizeStep","heardAuto","rangeAuto","viewSeg","spanSeg","heightStep","noteStep","miniNote","miniLane"].forEach(k=>ui[k]&&ui[k].refresh());
   ui.yousl.draw();ui.heardsl.draw();ui.rangesl.draw();
 }
@@ -543,9 +549,10 @@ function tick(){
       else{$("hearhz").textContent="";$("heargap").textContent="";}}
   }
   if(pipEls)pipTick();
-  if(!S.minimal||S.miniContour)draw();
+  const contour=S.minimal?S.miniContour:S.fullContour;
+  if(contour)draw();
   if(!S.minimal){
-    drawLevels();
+    if(contour)drawLevels();
     const sec=Math.floor(t);
     if(sec!==lastSec){lastSec=sec;
       if(S.settingsOpen)refresh();

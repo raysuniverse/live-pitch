@@ -587,9 +587,10 @@ async function openFloat(){
   const d=pip.document;
   d.head.innerHTML=`<meta charset="utf-8"><title>Live Pitch</title><style>
     html,body{margin:0;height:100%;background:#fff;font-family:"Google Sans",system-ui,-apple-system,Roboto,sans-serif;color:#202124;overflow:hidden}
-    .g{display:grid;grid-template-columns:1fr 1fr;grid-template-rows:auto auto auto;height:100%;padding:3vh 4vw 0;box-sizing:border-box;column-gap:4vw;align-content:start}
+    .g{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);grid-template-rows:auto auto auto;height:100%;padding:3vh 4vw 0;box-sizing:border-box;column-gap:4vw;align-content:start}
+    .g>*{min-width:0;overflow:hidden}
     .cap{font-size:clamp(9px,3.2vw,14px);font-weight:700;color:#5F6368;letter-spacing:.04em;line-height:1.3;min-height:2.6em}
-    .cap .dev{font-weight:400;color:#9AA0A6;letter-spacing:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:42vw}
+    .cap .dev{font-weight:400;color:#9AA0A6;letter-spacing:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
     .note{font-size:min(22vw,40vh);font-weight:700;line-height:1;letter-spacing:-.02em;color:#9AA0A6;align-self:end}
     .hz{font-size:min(8vw,14vh);color:#9AA0A6;margin-top:.4vh}
     .hint{position:absolute;left:0;right:0;bottom:1vh;text-align:center;font-size:clamp(9px,3vw,12px);color:#FA7B17}

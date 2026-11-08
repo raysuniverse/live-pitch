@@ -50,8 +50,10 @@ select{font:inherit;color:inherit}
 .start .demo{border:1px solid var(--line);padding:11px 18px;border-radius:100px;color:var(--grey);font-weight:500}
 .start .demo:hover{border-color:var(--grey)}
 .devs{display:flex;gap:14px;flex-wrap:wrap;align-items:center;color:var(--grey);font-size:13px}
-.devs label{display:flex;align-items:center;gap:6px}
-.devs select{border:1px solid var(--line);border-radius:8px;padding:5px 8px;background:#fff;max-width:230px}
+.devs label{display:flex;align-items:center;gap:8px;font-size:16px}   /* "mic" / "what I hear" at navigation size */
+.devs select{border:1px solid var(--line);border-radius:8px;padding:5px 8px;background:#fff;max-width:230px;font-size:13px}
+@container (max-width:640px){.devs label{font-size:13px}}
+@container (max-width:470px){.devs label{font-size:11px}}
 .hint{color:var(--grey);font-size:13px;margin:8px 0 0}
 .hint b{color:var(--ink);font-weight:500}
 .err{color:var(--red)}

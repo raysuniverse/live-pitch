@@ -375,10 +375,10 @@ function build(){
     const f=document.createElement("button");f.className="link"+(pip?" blue":"");f.id="floatbtn";f.textContent=pip?"⧉ floating…":"⧉ float";
     f.title="Open the live notes in a small window that stays on top of Zoom and everything else (Chrome)";f.onclick=openFloat;lft.appendChild(f);
   }
-  if(contourOn){const v=document.createElement("button");v.className="link";v.innerHTML=viewLabel(S.overlay);
-    v.title="click to switch between one shared lane and two stacked lanes";v.onclick=()=>{S.overlay=!S.overlay;save();build();};tl.appendChild(v);tl.appendChild(sep());}
   const t=document.createElement("button");t.className="link"+(contourOn?" blue":"");t.textContent=contourOn?"▾ contour":"▸ contour";
   t.onclick=()=>{if(S.minimal)S.miniContour=!S.miniContour;else S.fullContour=!S.fullContour;save();build();};tl.appendChild(t);
+  if(contourOn){tl.appendChild(sep());const v=document.createElement("button");v.className="link";v.innerHTML=viewLabel(S.overlay);
+    v.title="click to switch between one shared lane and two stacked lanes";v.onclick=()=>{S.overlay=!S.overlay;save();build();};tl.appendChild(v);}
   // steppers row, below the notes and above the contour: size / note / contour
   const r3=$("steps");r3.innerHTML="";
   const lab=(txt)=>{const l=document.createElement("span");l.className="sublab";l.textContent=txt;r3.appendChild(l);};
@@ -674,7 +674,7 @@ async function openFloat(){
   </style>`;
   // a 2×3 grid: captions share row 1, notes row 2, Hz row 3 — so both notes start at the same height
   d.body.innerHTML=`<div class="g">
-    <div class="tog"><span class="lft"><span id="pst"></span><span class="sep"> · </span><span id="pfull">⤢ full view</span></span><span id="po"></span><span class="sep" id="ps"> · </span><span id="pt"></span></div>
+    <div class="tog"><span class="lft"><span id="pst"></span><span class="sep"> · </span><span id="pfull">⤢ full view</span></span><span id="pt"></span><span class="sep" id="ps"> · </span><span id="po"></span></div>
     <div class="cap">YOU<div class="dev" id="yc"></div></div><div class="cap hearcol">HEAR<div class="dev" id="hcap"></div></div>
     <div class="note" id="yn">—</div><div class="note hearcol" id="hn">—</div>
     <div class="hz" id="yh"></div><div class="hz hearcol" id="hh"></div>

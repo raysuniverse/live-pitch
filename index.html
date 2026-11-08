@@ -52,6 +52,9 @@ select{font:inherit;color:inherit}
 .devs{display:flex;gap:14px;flex-wrap:wrap;align-items:center;color:var(--grey);font-size:13px}
 .devs label{display:flex;align-items:center;gap:8px;font-size:16px;color:#1A5FD0;font-weight:500}   /* "mic" / "what I hear": navigation size, a step deeper than the Start blue (#4285F4) */
 .devs select{border:1px solid var(--line);border-radius:8px;padding:5px 8px;background:#fff;max-width:230px;font-size:13px;color:var(--ink)}
+.keyhint{display:flex;flex-wrap:nowrap;gap:4px 9px;margin-left:auto;font-size:12px;color:var(--faint);white-space:nowrap}
+@container (max-width:760px){.keyhint{display:none}}   /* no room beside the dropdowns on narrow windows; the help list still has the keys */
+.keyhint b{color:var(--grey);font-weight:700;background:var(--panel);border:1px solid var(--line);border-radius:5px;padding:0 5px;margin-right:2px;font-family:ui-monospace,Menlo,monospace;font-size:11px}
 @container (max-width:640px){.devs label{font-size:13px}}
 @container (max-width:470px){.devs label{font-size:11px}}
 .hint{color:var(--grey);font-size:13px;margin:8px 0 0}
@@ -134,6 +137,7 @@ body.minimal .lane{margin-top:6px}
       <div class="devs">
         <label>mic <select id="micsel"><option value="">default microphone</option></select></label>
         <label>what I hear <select id="hearsel"><option value="">off</option><option value="tab">a browser tab (Chrome)</option></select></label>
+        <div class="keyhint" title="keyboard shortcuts (also inside the float)"><span><b>s</b> start</span><span><b>c</b> contour</span><span><b>o</b> view</span><span><b>[ ]</b> height</span><span><b>+ −</b> size</span></div>
       </div>
     </div>
     <p class="hint" id="starthint">Press <b>Start</b> and allow the microphone. <b>YOU</b> shows the note you are speaking on. To also see what you <b>hear</b> (a coach on Zoom, a clip), pick a loopback input like <b>BlackHole</b> under “what I hear”, or “a browser tab” to share a YouTube tab’s sound.</p>

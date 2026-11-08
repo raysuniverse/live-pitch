@@ -8,9 +8,10 @@ Both are drawn against your own floor / home / ceiling targets.
 
 ## Use
 
-1. Press **▶ Start** and allow the microphone.
+1. Press **▶ Start** and allow the microphone (**mic** picks which one; the default is fine).
 2. Drag the handles under **◎ my targets** to set floor, home and ceiling.
 3. To track what you hear, pick a source under **what I hear** (see routing below).
+4. **⚙ settings** holds the speaker's levels (detected automatically from the heard speech, with *use as my targets*), the time window (5 / 10 / 20 s), the display range, and the CSV log.
 
 Every view has the same two control rows:
 

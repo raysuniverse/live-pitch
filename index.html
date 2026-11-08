@@ -26,7 +26,9 @@ select{font:inherit;color:inherit}
 .brand h1{font-size:22px;font-weight:700;margin:0;letter-spacing:-.01em}
 .brand .sub{color:var(--grey);font-size:13px;margin:0}
 .toplinks{display:flex;align-items:center;gap:10px;flex-wrap:wrap;justify-content:flex-end}
-.tlrow{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.tlrow{display:flex;align-items:center;gap:10px;flex-wrap:wrap;width:100%}
+.tlrow .lft{margin-right:auto;display:inline-flex;align-items:center;gap:10px}
+.tlrow .sep{color:var(--line)}
 /* minimal: controls on two left-aligned rows under the title — row 1 size + view links, row 2 note + contour heights */
 body.minimal .toplinks{flex-basis:100%;flex-direction:column;align-items:flex-start;gap:6px}
 .link{color:var(--grey);font-size:13px;padding:4px 8px;border-radius:100px}
@@ -363,16 +365,21 @@ function build(){
   const tl=$("toplinks");tl.innerHTML="";
   let r1=tl,r2=tl;
   if(S.minimal){r1=document.createElement("div");r1.className="tlrow";r2=document.createElement("div");r2.className="tlrow";tl.append(r1,r2);}
-  const lab=document.createElement("span");lab.className="sublab";lab.textContent="size";r1.appendChild(lab);
+  // minimal mirrors the float: row 1 = [Start · full view] … [stack/overlay · contour · float], row 2 = size / note / contour steppers
+  const rs=S.minimal?r2:r1;
+  const lab=document.createElement("span");lab.className="sublab";lab.textContent="size";rs.appendChild(lab);
   const cur=()=>S.minimal?S.minimalScale:S.scale;
-  ui.sizeStep=stepper(r1,()=>Math.round(cur()*100)+"%",()=>setScale(cur()-0.1),()=>setScale(cur()+0.1));
+  ui.sizeStep=stepper(rs,()=>Math.round(cur()*100)+"%",()=>setScale(cur()-0.1),()=>setScale(cur()+0.1));
+  const sep=()=>{const x=document.createElement("span");x.className="sep";x.textContent="·";return x;};
   if(S.minimal){
-    const st=document.createElement("button");st.className="link";st.onclick=()=>start(false);r1.appendChild(st);ui.miniStart=st;
-    const b=document.createElement("button");b.className="link";b.textContent="⤢ full view";b.onclick=toggleMinimal;r1.appendChild(b);
+    const lft=document.createElement("span");lft.className="lft";r1.appendChild(lft);
+    const st=document.createElement("button");st.className="link";st.onclick=()=>start(false);lft.appendChild(st);ui.miniStart=st;
+    lft.appendChild(sep());
+    const b=document.createElement("button");b.className="link";b.textContent="⤢ full view";b.onclick=toggleMinimal;lft.appendChild(b);
+    if(S.miniContour){const v=document.createElement("button");v.className="link";v.innerHTML=viewLabel(S.overlay);
+      v.title="click to switch between one shared lane and two stacked lanes";v.onclick=()=>{S.overlay=!S.overlay;save();build();};r1.appendChild(v);r1.appendChild(sep());}
     const t=document.createElement("button");t.className="link"+(S.miniContour?" blue":"");t.textContent=S.miniContour?"▾ contour":"▸ contour";
     t.onclick=()=>{S.miniContour=!S.miniContour;save();build();};r1.appendChild(t);
-    if(S.miniContour){const v=document.createElement("button");v.className="link";v.innerHTML=viewLabel(S.overlay);
-      v.title="click to switch between one shared lane and two stacked lanes";v.onclick=()=>{S.overlay=!S.overlay;save();build();};r1.appendChild(v);}
     const l2=document.createElement("span");l2.className="sublab";l2.textContent="note";r2.appendChild(l2);
     ui.miniNote=stepper(r2,()=>S.noteAreaMini+" px",()=>setNote(-10),()=>setNote(10));
     if(S.miniContour){const l3=document.createElement("span");l3.className="sublab";l3.textContent="contour";r2.appendChild(l3);

@@ -711,7 +711,7 @@ async function openFloat(){
     d.getElementById("psv").textContent=Math.round(S.pipScale*100)+"%";
     d.getElementById("plrow").style.display=S.pipContour?"":"none";};
   // every click is a user gesture, so the window may be resized to fit the new fixed heights
-  const bump=(fn)=>()=>{fn();save();applyContour();try{pip.resizeTo(pip.outerWidth,pipHeight());}catch(e){}pipTick();};
+  const bump=(fn)=>()=>{fn();save();applyContour();try{pip.resizeTo(Math.max(pip.outerWidth,Math.round(420*(S.pipScale||1))),pipHeight());}catch(e){}pipTick();};
   d.getElementById("ps-").onclick=bump(()=>S.pipScale=Math.max(0.6,Math.round((S.pipScale-0.1)*10)/10));
   d.getElementById("ps+").onclick=bump(()=>S.pipScale=Math.min(2,Math.round((S.pipScale+0.1)*10)/10));
   d.getElementById("pn-").onclick=bump(()=>S.pipNoteArea=Math.max(50,S.pipNoteArea-10));

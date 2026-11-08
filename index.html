@@ -763,17 +763,21 @@ function pipTick(){
 // same keys on the page and in the float; in the float, o / + − / [ ] act on the float's own view settings
 function onKey(e,inPip){
   if(e.target.tagName==="SELECT"||e.target.tagName==="INPUT")return;
-  const k=e.key;
+  const k=e.key,code=e.code||"";
+  // layout / IME independent: match the physical key as well as the character
+  const plus=k==="+"||k==="="||code==="Equal"||code==="NumpadAdd";
+  const minus=k==="-"||k==="_"||k==="\u2212"||k==="\u2013"||k==="Subtract"||code==="Minus"||code==="NumpadSubtract";
+  const brL=k==="["||code==="BracketLeft",brR=k==="]"||code==="BracketRight";
   const pipRefit=()=>{save();if(pipEls){pipEls.applyContour();try{pip.resizeTo(Math.max(pip.outerWidth,Math.round(420*(S.pipScale||1))),pipHeight());}catch(err){}pipTick();}};
   if(k==="ArrowUp"){shiftYou(1);e.preventDefault();}else if(k==="ArrowDown"){shiftYou(-1);e.preventDefault();}
   else if(k==="a")toggleHeardAuto();else if(k==="c")copyHeard();
   else if(k==="o"){if(inPip){S.pipOverlay=!S.pipOverlay;pipRefit();}else{S.overlay=!S.overlay;save();build();}}
   else if(k==="r"){S.rangeAuto=!S.rangeAuto;if(!S.rangeAuto){S.lo=autoLo;S.hi=autoHi;}save();refresh();}
-  else if(k==="+"||k==="="){if(inPip){S.pipScale=Math.min(2,Math.round((S.pipScale+0.1)*10)/10);pipRefit();}else setScale((S.minimal?S.minimalScale:S.scale)+0.1);}
-  else if(k==="-"){if(inPip){S.pipScale=Math.max(0.6,Math.round((S.pipScale-0.1)*10)/10);pipRefit();}else setScale((S.minimal?S.minimalScale:S.scale)-0.1);}
+  else if(plus){if(inPip){S.pipScale=Math.min(2,Math.round((S.pipScale+0.1)*10)/10);pipRefit();}else setScale((S.minimal?S.minimalScale:S.scale)+0.1);}
+  else if(minus){if(inPip){S.pipScale=Math.max(0.6,Math.round((S.pipScale-0.1)*10)/10);pipRefit();}else setScale((S.minimal?S.minimalScale:S.scale)-0.1);}
   else if(k==="m")toggleMinimal();else if(k==="d")downloadCsv();
-  else if(k==="]"){if(inPip){S.pipLaneH=Math.min(600,S.pipLaneH+20);pipRefit();}else setLaneH(S.laneH+50);}
-  else if(k==="["){if(inPip){S.pipLaneH=Math.max(40,S.pipLaneH-20);pipRefit();}else setLaneH(S.laneH-50);}
+  else if(brR){if(inPip){S.pipLaneH=Math.min(600,S.pipLaneH+20);pipRefit();}else setLaneH(S.laneH+50);}
+  else if(brL){if(inPip){S.pipLaneH=Math.max(40,S.pipLaneH-20);pipRefit();}else setLaneH(S.laneH-50);}
   else if(k==="s"&&inPip)start(false);
 }
 document.addEventListener("keydown",e=>onKey(e,false));

@@ -87,6 +87,7 @@ details code{background:var(--panel);padding:1px 5px;border-radius:4px}
 body.minimal .only-full{display:none !important}
 body.minimal .shell,body.minimal .app{max-width:520px}
 body.minimal .col .note{font-size:84px}
+body.minimal .lane{margin-top:12px}
 /* phone */
 @media (max-width:560px){ .col .note{font-size:56px} .notes{gap:10px} }
 </style>
@@ -159,7 +160,7 @@ body.minimal .col .note{font-size:84px}
   </div>
 
   <div class="stat only-full" id="stat"></div>
-  <canvas class="lane only-full" id="lane1"></canvas>
+  <canvas class="lane" id="lane1"></canvas>
   <canvas class="lane only-full" id="lane2"></canvas>
   <canvas class="lvl only-full" id="lvl"></canvas>
   <div class="summary only-full" id="summary"></div>
@@ -172,7 +173,7 @@ body.minimal .col .note{font-size:84px}
     <p><b>Anything inside Chrome</b> (a YouTube clip, Zoom in the browser): choose “a browser tab”, then pick that tab and tick “Share tab audio”.</p>
     <p>Colours are the <b>note itself</b>: violet E2 → blue A2 → cyan D3 → green G3 → olive A#3 → orange C#4 → pink E4 → red G#4. The top is deliberately loud so a jump is obvious even after your voice has come back down.</p>
     <p><b>Keep it over Zoom:</b> in Chrome, <b>⧉ float</b> (top right) opens the two live notes in a small window that stays on top of every other app; drag its edges to resize.</p>
-    <div class="keys"><span><b>↑ ↓</b> move my three targets</span><span><b>a</b> their levels auto</span><span><b>c</b> copy theirs to mine</span><span><b>o</b> overlay / stacked</span><span><b>r</b> range auto</span><span><b>+ −</b> size</span><span><b>m</b> minimal view</span><span><b>d</b> download log</span></div>
+    <div class="keys"><span><b>↑ ↓</b> move my three targets</span><span><b>a</b> their levels auto</span><span><b>c</b> copy theirs to mine</span><span><b>o</b> overlay / stacked</span><span><b>r</b> range auto</span><span><b>+ −</b> size</span><span><b>m</b> minimal view</span><span><b>[ ]</b> contour height</span><span><b>d</b> download log</span></div>
   </details>
 </div>
 
@@ -251,7 +252,7 @@ class Source{
 /* ============ state ============ */
 const KEYS=["floor","home","ceiling"];
 const DEF={you:{floor:47,home:52,ceiling:64},heard:{auto:true,floor:null,home:null,ceiling:null},overlay:false,
-  rangeAuto:true,lo:43,hi:64,span:10,laneH:150,scale:1,minimalScale:1,minimal:false,settingsOpen:false,micId:"",hearId:""};
+  rangeAuto:true,lo:43,hi:64,span:10,laneH:150,miniContour:true,pipContour:true,scale:1,minimalScale:1,minimal:false,settingsOpen:false,micId:"",hearId:""};
 let S; try{S=Object.assign({},DEF,JSON.parse(localStorage.getItem("livepitch.v1")||"{}"));S.you=Object.assign({},DEF.you,S.you);S.heard=Object.assign({},DEF.heard,S.heard);}catch(e){S=JSON.parse(JSON.stringify(DEF));}
 function save(){try{localStorage.setItem("livepitch.v1",JSON.stringify(S));}catch(e){}}
 
@@ -354,6 +355,8 @@ function build(){
   ui.sizeStep=stepper(tl,()=>Math.round(cur()*100)+"%",()=>setScale(cur()-0.1),()=>setScale(cur()+0.1));
   if(S.minimal){
     const b=document.createElement("button");b.className="link blue";b.textContent="⤢ full view";b.onclick=toggleMinimal;tl.appendChild(b);
+    const t=document.createElement("button");t.className="link";t.textContent=S.miniContour?"▾ contour":"▸ contour";
+    t.onclick=()=>{S.miniContour=!S.miniContour;save();build();};tl.appendChild(t);
   }else{
     const b=document.createElement("button");b.className="link";b.textContent="▭ minimal";b.onclick=toggleMinimal;tl.appendChild(b);
   }
@@ -397,7 +400,8 @@ function refresh(){
   $("panel").classList.toggle("hidden",!S.settingsOpen);
   $("gear").textContent=S.settingsOpen?"⚙ settings ▴":"⚙ settings";$("gear").style.color=S.settingsOpen?BLUE:"";
   $("heardrow").style.display=hearOn?"":"none";$("hearcol").style.visibility=hearOn?"":"hidden";
-  $("lane2").style.display=(hearOn&&!S.overlay)?"":"none";
+  $("lane1").style.display=(S.minimal&&!S.miniContour)?"none":"";
+  $("lane2").style.display=(hearOn&&!S.overlay&&!S.minimal)?"":"none";
   ["sizeStep","heardAuto","rangeAuto","viewSeg","spanSeg","heightStep"].forEach(k=>ui[k]&&ui[k].refresh());
   ui.yousl.draw();ui.heardsl.draw();ui.rangesl.draw();
 }
@@ -526,8 +530,9 @@ function tick(){
       else{$("hearhz").textContent="";$("heargap").textContent="";}}
   }
   if(pipEls)pipTick();
+  if(!S.minimal||S.miniContour)draw();
   if(!S.minimal){
-    draw();drawLevels();
+    drawLevels();
     const sec=Math.floor(t);
     if(sec!==lastSec){lastSec=sec;
       if(S.settingsOpen)refresh();
@@ -542,7 +547,7 @@ function tick(){
 }
 
 /* ============ lanes ============ */
-function draw(){
+function laneRange(){
   const lv=S.you,hl=heardLevels(),tnow=performance.now()/1000-t0;
   const shown=[lv.floor,lv.ceiling];if(hl.floor!=null)shown.push(hl.floor,hl.ceiling);
   const srcs=hearOn?[you,hear]:[you];const peaks=[];
@@ -552,13 +557,17 @@ function draw(){
   if(hi-lo<14){const mid=(hi+lo)/2;lo=mid-7;hi=mid+7;}
   autoLo=Math.floor(lo);autoHi=Math.ceil(hi);
   if(!S.rangeAuto){lo=S.lo;hi=S.hi;}else{lo=autoLo;hi=autoHi;}
+  return{lo,hi,hl,tnow};
+}
+function draw(){
+  const {lo,hi,hl,tnow}=laneRange();
   const c1=$("lane1"),c2=$("lane2");
   if(!hearOn)lane(c1,lo,hi,tnow,"YOU",{you:true,hear:false,youLevels:true,heard:null});
-  else if(S.overlay)lane(c1,lo,hi,tnow,"YOU thick · HEAR thin",{you:true,hear:true,youLevels:true,heard:hl});
+  else if(S.overlay||S.minimal)lane(c1,lo,hi,tnow,"YOU thick · HEAR thin",{you:true,hear:true,youLevels:true,heard:hl});
   else{lane(c1,lo,hi,tnow,"YOU",{you:true,hear:false,youLevels:true,heard:hl,otherHome:true});lane(c2,lo,hi,tnow,"HEAR",{you:false,hear:true,youLevels:false,heard:hl,otherHome:true});}
 }
 function lane(c,lo,hi,tnow,caption,o){
-  const g=c.getContext("2d"),W=ui.laneW,H=S.laneH||150,LW=42,tw=W-LW;g.clearRect(0,0,W,H);
+  const g=c.getContext("2d"),W=o.W||ui.laneW,H=o.H||S.laneH||150,LW=42,tw=W-LW;g.clearRect(0,0,W,H);
   const y=n=>4+(hi-n)/(hi-lo)*(H-8);const lv=S.you,hl=o.heard;
   const heardFull=hl&&hl.floor!=null&&(o.hear||!o.otherHome);
   if(o.youLevels){g.fillStyle="#E6F4EA";g.fillRect(0,y(lv.ceiling+0.5),tw,y(lv.floor-0.5)-y(lv.ceiling+0.5));}
@@ -605,25 +614,35 @@ function drawLevels(){
 let pip=null,pipEls=null;
 async function openFloat(){
   if(pip){pip.focus();return;}
-  try{pip=await documentPictureInPicture.requestWindow({width:400,height:210});}
+  try{pip=await documentPictureInPicture.requestWindow({width:420,height:S.pipContour?360:210});}
   catch(e){$("starthint").textContent="Could not open the floating window ("+e.message+").";return;}
   const d=pip.document;
   d.head.innerHTML=`<meta charset="utf-8"><title>Live Pitch</title><style>
     html,body{margin:0;height:100%;background:#fff;font-family:"Google Sans",system-ui,-apple-system,Roboto,sans-serif;color:#202124;overflow:hidden}
-    .g{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);grid-template-rows:auto auto auto;height:100%;padding:3vh 4vw 0;box-sizing:border-box;column-gap:4vw;align-content:start}
+    .g{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);grid-template-rows:auto auto auto auto minmax(0,1fr);height:100%;padding:2vh 4vw 2vh;box-sizing:border-box;column-gap:4vw;align-content:start}
+    .tog{grid-column:1/-1;font-size:11px;color:#5F6368;cursor:pointer;user-select:none;margin-top:1vh;justify-self:end}
+    .tog:hover{color:#4285F4}
+    .lane{grid-column:1/-1;display:block;width:100%;height:100%;min-height:50px;border:1px solid #DADCE0;border-radius:8px;box-sizing:border-box}
+    body.nocontour .lane{display:none}
+    body.nocontour .g{grid-template-rows:auto auto auto auto}
     .g>*{min-width:0;overflow:hidden}
     .cap{font-size:clamp(9px,3.2vw,14px);font-weight:700;color:#5F6368;letter-spacing:.04em;line-height:1.3;min-height:2.6em}
     .cap .dev{font-weight:400;color:#9AA0A6;letter-spacing:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
     .note{font-size:min(22vw,40vh);font-weight:700;line-height:1;letter-spacing:-.02em;color:#9AA0A6;align-self:end}
     .hz{font-size:min(8vw,14vh);color:#9AA0A6;margin-top:.4vh}
+    body:not(.nocontour) .note{font-size:min(18vw,22vh)}
+    body:not(.nocontour) .hz{font-size:min(6vw,8vh)}
     .hint{position:absolute;left:0;right:0;bottom:1vh;text-align:center;font-size:clamp(9px,3vw,12px);color:#FA7B17}
   </style>`;
   // a 2×3 grid: captions share row 1, notes row 2, Hz row 3 — so both notes start at the same height
   d.body.innerHTML=`<div class="g">
     <div class="cap">YOU<div class="dev" id="yc"></div></div><div class="cap hearcol">HEAR<div class="dev" id="hcap"></div></div>
     <div class="note" id="yn">—</div><div class="note hearcol" id="hn">—</div>
-    <div class="hz" id="yh"></div><div class="hz hearcol" id="hh"></div></div><div class="hint" id="ph"></div>`;
-  pipEls={yn:d.getElementById("yn"),yh:d.getElementById("yh"),hn:d.getElementById("hn"),hh:d.getElementById("hh"),hc:[...d.querySelectorAll(".hearcol")],ph:d.getElementById("ph"),yc:d.getElementById("yc"),hcap:d.getElementById("hcap")};
+    <div class="hz" id="yh"></div><div class="hz hearcol" id="hh"></div>
+    <div class="tog" id="pt"></div><canvas class="lane" id="pl"></canvas></div><div class="hint" id="ph"></div>`;
+  pipEls={yn:d.getElementById("yn"),yh:d.getElementById("yh"),hn:d.getElementById("hn"),hh:d.getElementById("hh"),hc:[...d.querySelectorAll(".hearcol")],ph:d.getElementById("ph"),yc:d.getElementById("yc"),hcap:d.getElementById("hcap"),pt:d.getElementById("pt"),pl:d.getElementById("pl")};
+  const applyContour=()=>{d.body.classList.toggle("nocontour",!S.pipContour);pipEls.pt.textContent=S.pipContour?"▾ contour":"▸ contour";};
+  pipEls.pt.onclick=()=>{S.pipContour=!S.pipContour;save();applyContour();pipTick();};applyContour();
   pip.addEventListener("pagehide",()=>{pip=null;pipEls=null;const b=$("floatbtn");if(b)b.textContent="⧉ float";});
   const b=$("floatbtn");if(b)b.textContent="⧉ floating…";
   if(!running){pipEls.ph.textContent="press Start on the main page";}
@@ -640,6 +659,13 @@ function pipTick(){
     if(hear.hz>0){const n=nOf(hear.hz);e.hn.textContent=nameOf(n);e.hn.style.color=specColour(n);e.hh.textContent=hear.hz.toFixed(0)+" Hz";e.hh.style.color=specColour(n);}
     else if(now>hear.holdUntil){e.hn.textContent="—";e.hn.style.color=FAINT;e.hh.textContent=now-hear.lastSignal>5?"silent":"";}}
   e.ph.textContent=running?"":"press Start on the main page";
+  // contour under the notes: the same lane renderer, sized to the window
+  if(S.pipContour&&pip){const c=e.pl,dpr=pip.devicePixelRatio||1,cw=c.clientWidth,ch=c.clientHeight;
+    if(cw>0&&ch>0){const pw=Math.round(cw*dpr),phh=Math.round(ch*dpr);
+      if(c.width!==pw||c.height!==phh){c.width=pw;c.height=phh;}
+      c.getContext("2d").setTransform(dpr,0,0,dpr,0,0);
+      const r=laneRange();
+      lane(c,r.lo,r.hi,r.tnow,hearOn?"YOU thick · HEAR thin":"YOU",{you:true,hear:hearOn,youLevels:true,heard:hearOn?r.hl:null,W:cw,H:ch});}}
 }
 
 /* ============ keys ============ */

@@ -265,10 +265,13 @@ class Source{
 
 /* ============ state ============ */
 const KEYS=["floor","home","ceiling"];
-const DEF={you:{floor:47,home:52,ceiling:64},heard:{auto:true,floor:null,home:null,ceiling:null},overlay:true,fullContour:true,overlayDefaulted:true,
+const DEF={you:{floor:47,home:52,ceiling:64},heard:{auto:true,floor:null,home:null,ceiling:null},overlay:true,fullContour:true,overlayDefaulted:true,contourDefaulted:true,
   rangeAuto:true,lo:43,hi:64,span:10,laneH:150,miniContour:true,pipContour:true,pipOverlay:true,noteAreaFull:104,noteAreaMini:120,pipNoteArea:110,pipLaneH:140,scale:1,minimalScale:1,minimal:false,settingsOpen:false,micId:"",hearId:""};
 let S; try{S=Object.assign({},DEF,JSON.parse(localStorage.getItem("livepitch.v1")||"{}"));S.you=Object.assign({},DEF.you,S.you);S.heard=Object.assign({},DEF.heard,S.heard);
-  if(!JSON.parse(localStorage.getItem("livepitch.v1")||"{}").overlayDefaulted){S.overlay=true;S.overlayDefaulted=true;}   // 2026-11-08: overlay became the default
+  const stored=JSON.parse(localStorage.getItem("livepitch.v1")||"{}");
+  if(!stored.overlayDefaulted){S.overlay=true;S.overlayDefaulted=true;}   // 2026-11-08: overlay became the default
+  // 2026-11-08: every view lands with the contour shown as an overlay (one-time, also repairs settings saved by a broken build)
+  if(!stored.contourDefaulted){S.overlay=true;S.pipOverlay=true;S.fullContour=true;S.miniContour=true;S.pipContour=true;S.heard=Object.assign({},DEF.heard,S.heard,{auto:true});S.contourDefaulted=true;}
 }catch(e){S=JSON.parse(JSON.stringify(DEF));}
 function save(){try{localStorage.setItem("livepitch.v1",JSON.stringify(S));}catch(e){}}
 

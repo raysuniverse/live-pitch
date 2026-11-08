@@ -26,6 +26,9 @@ select{font:inherit;color:inherit}
 .brand h1{font-size:22px;font-weight:700;margin:0;letter-spacing:-.01em}
 .brand .sub{color:var(--grey);font-size:13px;margin:0}
 .toplinks{display:flex;align-items:center;gap:10px;flex-wrap:wrap;justify-content:flex-end}
+.tlrow{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+/* minimal: controls on two left-aligned rows under the title — row 1 size + view links, row 2 note + contour heights */
+body.minimal .toplinks{flex-basis:100%;flex-direction:column;align-items:flex-start;gap:6px}
 .link{color:var(--grey);font-size:13px;padding:4px 8px;border-radius:100px}
 .link:hover{background:var(--panel)}
 .link.blue{color:var(--blue)}
@@ -353,19 +356,21 @@ function setRange(key,n){if(key==="lo")S.lo=Math.max(36,Math.min(S.hi-5,n));else
 const ui={};
 function build(){
   const tl=$("toplinks");tl.innerHTML="";
-  const lab=document.createElement("span");lab.className="sublab";lab.textContent="size";tl.appendChild(lab);
+  let r1=tl,r2=tl;
+  if(S.minimal){r1=document.createElement("div");r1.className="tlrow";r2=document.createElement("div");r2.className="tlrow";tl.append(r1,r2);}
+  const lab=document.createElement("span");lab.className="sublab";lab.textContent="size";r1.appendChild(lab);
   const cur=()=>S.minimal?S.minimalScale:S.scale;
-  ui.sizeStep=stepper(tl,()=>Math.round(cur()*100)+"%",()=>setScale(cur()-0.1),()=>setScale(cur()+0.1));
+  ui.sizeStep=stepper(r1,()=>Math.round(cur()*100)+"%",()=>setScale(cur()-0.1),()=>setScale(cur()+0.1));
   if(S.minimal){
-    const b=document.createElement("button");b.className="link blue";b.textContent="⤢ full view";b.onclick=toggleMinimal;tl.appendChild(b);
+    const b=document.createElement("button");b.className="link blue";b.textContent="⤢ full view";b.onclick=toggleMinimal;r1.appendChild(b);
     const t=document.createElement("button");t.className="link";t.textContent=S.miniContour?"▾ contour":"▸ contour";
-    t.onclick=()=>{S.miniContour=!S.miniContour;save();build();};tl.appendChild(t);
+    t.onclick=()=>{S.miniContour=!S.miniContour;save();build();};r1.appendChild(t);
     if(S.miniContour){const v=document.createElement("button");v.className="link";v.textContent="stack/overlay";
-      v.title="click to switch between one shared lane and two stacked lanes";v.onclick=()=>{S.overlay=!S.overlay;save();build();};tl.appendChild(v);}
-    const l2=document.createElement("span");l2.className="sublab";l2.textContent="note";tl.appendChild(l2);
-    ui.miniNote=stepper(tl,()=>S.noteAreaMini+" px",()=>setNote(-10),()=>setNote(10));
-    if(S.miniContour){const l3=document.createElement("span");l3.className="sublab";l3.textContent="contour";tl.appendChild(l3);
-      ui.miniLane=stepper(tl,()=>S.laneH+" px",()=>setLaneH(S.laneH-50),()=>setLaneH(S.laneH+50));}else ui.miniLane=null;
+      v.title="click to switch between one shared lane and two stacked lanes";v.onclick=()=>{S.overlay=!S.overlay;save();build();};r1.appendChild(v);}
+    const l2=document.createElement("span");l2.className="sublab";l2.textContent="note";r2.appendChild(l2);
+    ui.miniNote=stepper(r2,()=>S.noteAreaMini+" px",()=>setNote(-10),()=>setNote(10));
+    if(S.miniContour){const l3=document.createElement("span");l3.className="sublab";l3.textContent="contour";r2.appendChild(l3);
+      ui.miniLane=stepper(r2,()=>S.laneH+" px",()=>setLaneH(S.laneH-50),()=>setLaneH(S.laneH+50));}else ui.miniLane=null;
   }else{
     const b=document.createElement("button");b.className="link";b.textContent="▭ minimal";b.onclick=toggleMinimal;tl.appendChild(b);
     const t=document.createElement("button");t.className="link";t.textContent=S.fullContour?"▾ contour":"▸ contour";
@@ -374,7 +379,7 @@ function build(){
   }
   if("documentPictureInPicture" in window){
     const f=document.createElement("button");f.className="link";f.id="floatbtn";f.textContent=pip?"⧉ floating…":"⧉ float";
-    f.title="Open the live notes in a small window that stays on top of Zoom and everything else (Chrome)";f.onclick=openFloat;tl.appendChild(f);
+    f.title="Open the live notes in a small window that stays on top of Zoom and everything else (Chrome)";f.onclick=openFloat;r1.appendChild(f);
   }
   document.body.classList.toggle("minimal",S.minimal);applyNote();
   $("app").style.zoom=S.minimal?S.minimalScale:S.scale;

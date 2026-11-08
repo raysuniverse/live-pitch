@@ -1,65 +1,52 @@
 # Live Pitch
 
-Real-time pitch monitor for speech practice. It shows the musical note you are
-speaking on and, optionally, the note of what you are hearing (a coach on a
-call, a recording), against your own floor, home and ceiling targets.
+Live pitch monitor for speech practice. **YOU** is the note you are speaking on;
+**HEAR** is the note of what your computer plays (a coach on a call, a clip).
+Both are drawn against your own floor / home / ceiling targets.
 
-**Open:** https://raysuniverse.github.io/live-pitch/
-**Demo without a microphone:** https://raysuniverse.github.io/live-pitch/?demo=1
+**Open:** https://raysuniverse.github.io/live-pitch/ · **Demo (no mic):** https://raysuniverse.github.io/live-pitch/?demo=1
 
-## Features
+## Use
 
-- Two live readouts: **YOU** (microphone) and **HEAR** (what your computer plays)
-- Fixed note-to-colour spectrum, so the same note always has the same colour
-- Floor / home / ceiling targets with an instant verdict under your note
-- Their levels detected automatically from the heard speech; copy them as your targets
-- Scrolling pitch contours in stacked or overlay lanes; 5, 10 or 20 s window
-- Minimal view, adjustable size, and a floating always-on-top window (Chrome)
-- Session log export as CSV
+1. Press **▶ Start** and allow the microphone.
+2. Drag the handles under **◎ my targets** to set floor, home and ceiling.
+3. To track what you hear, pick a source under **what I hear** (see routing below).
 
-## Usage
+Every view has the same two control rows:
 
-1. Open the page in Chrome, Edge or Safari and press **Start**. Allow the microphone.
-2. Drag the handles under *my targets* to set your floor, home and ceiling.
-3. To track what you hear, choose a source under *what I hear* (see below), then press **Start** again.
+- **Under the title:** Start / restart · minimal or full view · float — and on the right **▾ contour** (show / hide the plot) · **stack/overlay** (two lanes or one shared lane). The active choice is blue and bold.
+- **Above the contour:** **size** (zoom) · **note** (height of the note + Hz block) · **contour** (plot height). These heights are fixed once set, so nothing jumps while you speak.
+
+Views: full page, **▭ minimal** (notes + contour only), and **⧉ float** (a small always-on-top window, Chrome). Settings remember themselves per view.
 
 | Key | Action |
 |-----|--------|
-| ↑ / ↓ | Move all three targets |
-| a | Their levels: auto / manual |
-| c | Copy their levels to my targets |
-| o | Overlay / stacked lanes |
-| r | Display range: auto / manual |
-| + / − | Size |
-| m | Minimal view |
-| d | Download the session log |
+| ↑ / ↓ | move all three targets |
+| a | their levels: auto / manual |
+| c | copy their levels to my targets |
+| o | stack / overlay |
+| r | display range: auto / manual |
+| + / − | size · [ / ] contour height |
+| m | minimal view · d download the log (CSV) |
 
 ## Hearing what your computer plays
 
-Browsers can only listen to inputs, so system audio must be routed through a
-virtual input device.
+Browsers can only listen to inputs, so system audio must come back through a virtual input.
 
-- **macOS:** install [BlackHole 2ch](https://existential.audio/blackhole/). In Audio MIDI
-  Setup, create a Multi-Output Device containing your headphones and BlackHole, and
-  select it as the system output. Choose *BlackHole 2ch* under *what I hear*.
-- **Windows:** install [VB-Cable](https://vb-audio.com/Cable/). Set the system output to
-  *CABLE Input*, enable *Listen to this device* on your headphones, and choose
-  *CABLE Output* under *what I hear*.
-- **Audio playing inside Chrome** (a video, a browser-based call): choose *a browser tab*
-  and tick *Share tab audio* in the dialog.
+- **macOS:** install [BlackHole 2ch](https://existential.audio/blackhole/). In Audio MIDI Setup make a Multi-Output Device with your headphones **and** BlackHole, set it as the system output, and choose *BlackHole 2ch* under *what I hear*. Check BlackHole's own volume is at maximum, and prefer the built-in mic over AirPods so the device stays at 48 kHz.
+- **Windows:** install [VB-Cable](https://vb-audio.com/Cable/); output to *CABLE Input*, listen through your headphones, choose *CABLE Output* under *what I hear*.
+- **Audio inside Chrome:** choose *a browser tab* and tick *Share tab audio*.
+
+If HEAR reads "silent" or "very quiet", the routing or the loopback volume is the problem, not the page.
 
 ## Privacy
 
-All processing happens in the browser. No audio or data is uploaded. Settings are
-stored in the browser's local storage, and the session log leaves the device only
-when you download it.
+Everything runs in the browser. No audio or data leaves the device; settings live in local storage and the log only when you download it.
 
 ## Method
 
-Pitch is estimated with the YIN algorithm on 64 ms frames at 16 kHz (60–500 Hz),
-median-smoothed over 250 ms, with an adaptive noise gate and single-frame
-octave-error rejection. Notes use A4 = 440 Hz.
+YIN pitch estimation on 64 ms frames at 16 kHz (60–500 Hz), 250 ms median smoothing, noise gate, single-frame octave-error rejection. A4 = 440 Hz.
 
 ## License
 
-MIT. Free to use, copy, modify and redistribute; see [LICENSE](LICENSE).
+MIT — see [LICENSE](LICENSE).

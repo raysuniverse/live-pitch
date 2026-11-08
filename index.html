@@ -167,6 +167,7 @@ body.minimal #ministeps{display:flex}
       <span class="lab">session</span>
       <button class="chip action" id="csvbtn">⬇ download log (CSV)</button>
       <button class="chip" id="stopbtn">■ stop &amp; summarise</button>
+      <button class="chip" id="resetbtn" title="contour shown as overlay, targets B2 / E3 / F4, default sizes; keeps your mic and loopback choice">↺ reset to defaults</button>
       <span class="sublab" id="devnote"></span>
     </div>
   </div>
@@ -265,7 +266,7 @@ class Source{
 
 /* ============ state ============ */
 const KEYS=["floor","home","ceiling"];
-const DEF={you:{floor:47,home:52,ceiling:64},heard:{auto:true,floor:null,home:null,ceiling:null},overlay:true,fullContour:true,overlayDefaulted:true,
+const DEF={you:{floor:47,home:52,ceiling:65},   // B2 / E3 / F4heard:{auto:true,floor:null,home:null,ceiling:null},overlay:true,fullContour:true,overlayDefaulted:true,
   rangeAuto:true,lo:43,hi:64,span:10,laneH:150,miniContour:true,pipContour:true,pipOverlay:true,noteAreaFull:104,noteAreaMini:120,pipNoteArea:110,pipLaneH:140,scale:1,minimalScale:1,minimal:false,settingsOpen:false,micId:"",hearId:""};
 let S; try{S=Object.assign({},DEF,JSON.parse(localStorage.getItem("livepitch.v1")||"{}"));S.you=Object.assign({},DEF.you,S.you);S.heard=Object.assign({},DEF.heard,S.heard);
   if(!JSON.parse(localStorage.getItem("livepitch.v1")||"{}").overlayDefaulted){S.overlay=true;S.overlayDefaulted=true;}   // 2026-11-08: overlay became the default
@@ -413,7 +414,7 @@ function build(){
     ui.heightStep=stepper($("heightstep"),()=>S.laneH+" px",()=>setLaneH(S.laneH-50),()=>setLaneH(S.laneH+50));
     ui.noteStep=stepper($("notestep"),()=>S.noteAreaFull+" px",()=>setNote(-10),()=>setNote(10));
     $("copybtn").onclick=copyHeard;$("gear").onclick=()=>{S.settingsOpen=!S.settingsOpen;save();refresh();};
-    $("csvbtn").onclick=downloadCsv;$("stopbtn").onclick=stop;
+    $("csvbtn").onclick=downloadCsv;$("stopbtn").onclick=stop;$("resetbtn").onclick=resetDefaults;
     $("startbtn").onclick=()=>start(false);$("demobtn").onclick=()=>start(true);
     $("micsel").onchange=()=>{S.micId=$("micsel").value;save();if(running&&!demo)start(false);};
     $("hearsel").onchange=()=>{S.hearId=$("hearsel").value;save();if(running&&!demo)start(false);};
@@ -452,6 +453,12 @@ function applyNote(){$("app").style.setProperty("--na",(S.minimal?S.noteAreaMini
 function setNote(d){const k=S.minimal?"noteAreaMini":"noteAreaFull";S[k]=Math.max(50,Math.min(400,S[k]+d));save();applyNote();refresh();}
 // "stack/overlay" with the active word highlighted
 function viewLabel(overlay){return `<span class="${overlay?"off":"on"}">stack</span>/<span class="${overlay?"on":"off"}">overlay</span>`;}
+// back to the shipped defaults: contour shown as overlay in every view, targets B2 / E3 / F4, default sizes; device choices are kept
+function resetDefaults(){
+  const keep={micId:S.micId,hearId:S.hearId,settingsOpen:true,minimal:S.minimal};
+  S=Object.assign(JSON.parse(JSON.stringify(DEF)),keep);det=null;save();build();
+  if(pipEls){pipEls.applyContour();try{pip.resizeTo(pip.outerWidth,pipHeight());}catch(e){}pipTick();}
+}
 function setLaneH(v){S.laneH=Math.max(100,Math.min(600,Math.round(v/50)*50));save();layout();refresh();}
 function setScale(v){v=Math.round(Math.max(0.6,Math.min(2,v))*10)/10;if(S.minimal)S.minimalScale=v;else S.scale=v;save();$("app").style.zoom=S.minimal?S.minimalScale:S.scale;refresh();setTimeout(layout,0);}
 function toggleMinimal(){S.minimal=!S.minimal;save();build();}

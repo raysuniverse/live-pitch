@@ -723,7 +723,11 @@ async function openFloat(){
   pipEls.pfull.onclick=()=>{if(S.minimal)toggleMinimal();try{window.focus();}catch(e){}};
   pipEls.pt.onclick=bump(()=>S.pipContour=!S.pipContour);
   pipEls.po.onclick=bump(()=>S.pipOverlay=!S.pipOverlay);applyContour();
-  d.addEventListener("keydown",e=>onKey(e,true));
+  // keys: the float only receives them while it has keyboard focus — take focus on open and on any click inside
+  d.body.tabIndex=-1;d.body.style.outline="none";
+  pip.addEventListener("keydown",e=>onKey(e,true),true);
+  d.addEventListener("pointerdown",()=>{try{d.body.focus();}catch(err){}});
+  try{pip.focus();d.body.focus();}catch(err){}
   pip.addEventListener("pagehide",()=>{pip=null;pipEls=null;const b=$("floatbtn");if(b){b.textContent="⧉ float";b.classList.remove("blue");}});
   const b=$("floatbtn");if(b){b.textContent="⧉ floating…";b.classList.add("blue");}
   if(!running){pipEls.ph.textContent="not listening yet — press ▶ Start";}

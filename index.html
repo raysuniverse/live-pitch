@@ -18,7 +18,8 @@
 html,body{margin:0;background:var(--bg);color:var(--ink);font-family:"Google Sans",system-ui,-apple-system,Roboto,"Segoe UI",sans-serif;font-size:15px;line-height:1.45;-webkit-font-smoothing:antialiased}
 button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:pointer}
 select{font:inherit;color:inherit}
-.app{max-width:900px;margin:0 auto;padding:12px 16px 28px}
+.shell{max-width:900px;margin:0 auto;padding:12px 16px 0}
+.app{max-width:900px;margin:0 auto;padding:0 16px 28px}
 /* header */
 .top{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
 .brand{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap}
@@ -84,18 +85,20 @@ details code{background:var(--panel);padding:1px 5px;border-radius:4px}
 .keys b{font-weight:700;color:var(--ink)}
 /* minimal view */
 body.minimal .only-full{display:none !important}
-body.minimal .app{max-width:520px}
+body.minimal .shell,body.minimal .app{max-width:520px}
 body.minimal .col .note{font-size:84px}
 /* phone */
 @media (max-width:560px){ .col .note{font-size:56px} .notes{gap:10px} }
 </style>
 </head>
 <body>
-<div class="app" id="app">
+<div class="shell">
   <div class="top">
     <div class="brand"><h1>Live Pitch</h1><p class="sub only-full">the note you speak on, and the note you hear, in real time</p></div>
     <div class="toplinks" id="toplinks"></div>
   </div>
+</div>
+<div class="app" id="app">
 
   <div class="card only-full" id="startcard">
     <div class="start">
@@ -129,7 +132,6 @@ body.minimal .col .note{font-size:84px}
     <span class="lab green">my targets</span>
     <canvas class="slider" id="yousl"></canvas>
     <span class="spacer"></span>
-    <span class="sublab">size</span><span id="sizestep"></span>
     <button class="link" id="gear">⚙ settings</button>
   </div>
 
@@ -344,9 +346,10 @@ function setRange(key,n){if(key==="lo")S.lo=Math.max(36,Math.min(S.hi-5,n));else
 const ui={};
 function build(){
   const tl=$("toplinks");tl.innerHTML="";
+  const lab=document.createElement("span");lab.className="sublab";lab.textContent="size";tl.appendChild(lab);
+  const cur=()=>S.minimal?S.minimalScale:S.scale;
+  ui.sizeStep=stepper(tl,()=>Math.round(cur()*100)+"%",()=>setScale(cur()-0.1),()=>setScale(cur()+0.1));
   if(S.minimal){
-    const lab=document.createElement("span");lab.className="sublab";lab.textContent="size";tl.appendChild(lab);
-    ui.minStep=stepper(tl,()=>Math.round(S.minimalScale*100)+"%",()=>setScale(S.minimalScale-0.1),()=>setScale(S.minimalScale+0.1));
     const b=document.createElement("button");b.className="link blue";b.textContent="⤢ full view";b.onclick=toggleMinimal;tl.appendChild(b);
   }else{
     const b=document.createElement("button");b.className="link";b.textContent="▭ minimal";b.onclick=toggleMinimal;tl.appendChild(b);
@@ -358,7 +361,6 @@ function build(){
   document.body.classList.toggle("minimal",S.minimal);
   $("app").style.zoom=S.minimal?S.minimalScale:S.scale;
   if(!ui.built){
-    ui.sizeStep=stepper($("sizestep"),()=>Math.round(S.scale*100)+"%",()=>setScale(S.scale-0.1),()=>setScale(S.scale+0.1));
     ui.yousl=new NoteSlider($("yousl"),KEYS,()=>Object.assign({},S.you),setYou);
     ui.heardsl=new NoteSlider($("heardsl"),KEYS,heardLevels,setHeard,()=>!S.heard.auto,heardManual);
     ui.rangesl=new NoteSlider($("rangesl"),["lo","hi"],rangeValues,setRange,()=>!S.rangeAuto,rangeManual,{lo:"low",hi:"high"});
@@ -377,7 +379,7 @@ function build(){
   layout();refresh();
 }
 function layout(){
-  const w=$("app").clientWidth-32;
+  const w=$("app").clientWidth-32;   // clientWidth is in the app's own (zoomed) coordinates — correct for canvas sizes
   ui.yousl.size(Math.min(360,Math.max(220,w-330)));
   ui.heardsl.size(Math.min(320,Math.max(200,w-380)));
   ui.rangesl.size(Math.min(240,Math.max(160,w-520)));
@@ -391,7 +393,7 @@ function refresh(){
   $("gear").textContent=S.settingsOpen?"⚙ settings ▴":"⚙ settings";$("gear").style.color=S.settingsOpen?BLUE:"";
   $("heardrow").style.display=hearOn?"":"none";$("hearcol").style.visibility=hearOn?"":"hidden";
   $("lane2").style.display=(hearOn&&!S.overlay)?"":"none";
-  ["sizeStep","minStep","heardAuto","rangeAuto","viewSeg","spanSeg"].forEach(k=>ui[k]&&ui[k].refresh());
+  ["sizeStep","heardAuto","rangeAuto","viewSeg","spanSeg"].forEach(k=>ui[k]&&ui[k].refresh());
   ui.yousl.draw();ui.heardsl.draw();ui.rangesl.draw();
 }
 function setScale(v){v=Math.round(Math.max(0.6,Math.min(2,v))*10)/10;if(S.minimal)S.minimalScale=v;else S.scale=v;save();$("app").style.zoom=S.minimal?S.minimalScale:S.scale;refresh();setTimeout(layout,0);}

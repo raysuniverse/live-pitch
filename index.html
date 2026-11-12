@@ -39,6 +39,7 @@ select{font:inherit;color:inherit}
 .link{color:var(--grey);font-size:13px;padding:4px 8px;border-radius:100px}
 .link:hover{background:var(--panel)}
 .link.blue{color:var(--blue);font-weight:700}
+.link:disabled{opacity:.4;cursor:default;background:none}
 .link .on,.chip .on{color:var(--blue);font-weight:700}
 .link .off,.chip .off{color:var(--faint)}
 /* start card */
@@ -137,7 +138,7 @@ body.minimal .lane{margin-top:6px}
       <div class="devs">
         <label>mic <select id="micsel"><option value="">default microphone</option></select></label>
         <label>what I hear <select id="hearsel"><option value="">off</option><option value="tab">a browser tab (Chrome)</option></select></label>
-        <div class="keyhint" title="keyboard shortcuts (also inside the float)"><span><b>s</b> start</span><span><b>c</b> contour</span><span><b>o</b> view</span><span><b>[ ]</b> height</span><span><b>+ −</b> size</span></div>
+        <div class="keyhint" title="keyboard shortcuts (also inside the float)"><span><b>s</b> start</span><span><b>␣</b> pause</span><span><b>c</b> contour</span><span><b>o</b> view</span><span><b>[ ]</b> height</span><span><b>+ −</b> size</span></div>
       </div>
     </div>
     <p class="hint" id="starthint">Press <b>Start</b> and allow the microphone. <b>YOU</b> shows the note you are speaking on. To also see what you <b>hear</b> (a coach on Zoom, a clip), pick a loopback input like <b>BlackHole</b> under “what I hear”, or “a browser tab” to share a YouTube tab’s sound.</p>
@@ -203,7 +204,7 @@ body.minimal .lane{margin-top:6px}
     <p><b>Anything inside Chrome</b> (a YouTube clip, Zoom in the browser): choose “a browser tab”, then pick that tab and tick “Share tab audio”.</p>
     <p>Colours are the <b>note itself</b>: violet E2 → blue A2 → cyan D3 → green G3 → olive A#3 → orange C#4 → pink E4 → red G#4. The top is deliberately loud so a jump is obvious even after your voice has come back down.</p>
     <p><b>Keep it over Zoom:</b> in Chrome, <b>⧉ float</b> (top right) opens the two live notes in a small window that stays on top of every other app; drag its edges to resize.</p>
-    <div class="keys"><span><b>s</b> start / restart</span><span><b>c</b> show / hide contour</span><span><b>o</b> overlay / stacked</span><span><b>[ ]</b> contour height</span><span><b>+ −</b> size</span><span><b>↑ ↓</b> move my three targets</span><span><b>a</b> their levels auto</span><span><b>t</b> copy theirs to mine</span><span><b>r</b> range auto</span><span><b>m</b> minimal view</span><span><b>d</b> download log</span></div>
+    <div class="keys"><span><b>s</b> start / restart</span><span><b>space</b> or <b>p</b> pause / resume (freeze the contour to study its shape)</span><span><b>c</b> show / hide contour</span><span><b>o</b> overlay / stacked</span><span><b>[ ]</b> contour height</span><span><b>+ −</b> size</span><span><b>↑ ↓</b> move my three targets</span><span><b>a</b> their levels auto</span><span><b>t</b> copy theirs to mine</span><span><b>r</b> range auto</span><span><b>m</b> minimal view</span><span><b>d</b> download log</span></div>
   </details>
 </div>
 
@@ -292,7 +293,7 @@ let S; try{S=Object.assign({},DEF,JSON.parse(localStorage.getItem("livepitch.v1"
 function save(){try{localStorage.setItem("livepitch.v1",JSON.stringify(S));}catch(e){}}
 
 const you=new Source("you",80), hear=new Source("hear",60,true);
-let ac=null, running=false, hearOn=false, demo=null, t0=0, timer=null, log=[], det=null, detAt=0, autoLo=43, autoHi=64, streams=[];
+let ac=null, running=false, paused=false, pauseAt=0, hearOn=false, demo=null, t0=0, timer=null, log=[], det=null, detAt=0, autoLo=43, autoHi=64, streams=[];
 const $=id=>document.getElementById(id);
 
 /* ============ widgets ============ */
@@ -391,6 +392,9 @@ function build(){
   const lft=document.createElement("span");lft.className="lft";tl.appendChild(lft);
   const st=document.createElement("button");st.className="link";st.onclick=()=>start(false);lft.appendChild(st);ui.hdrStart=st;
   lft.appendChild(sep());
+  const pz=document.createElement("button");pz.className="link";pz.title="freeze the contour to look at its shape, then continue (space or p)";
+  pz.onclick=()=>{togglePause();pz.blur();};lft.appendChild(pz);ui.hdrPause=pz;
+  lft.appendChild(sep());
   const mode=document.createElement("button");mode.className="link";mode.textContent=S.minimal?"⤢ full view":"▭ minimal";mode.onclick=toggleMinimal;lft.appendChild(mode);
   if("documentPictureInPicture" in window){
     lft.appendChild(sep());
@@ -438,7 +442,7 @@ function layout(){
   [$("lane1"),$("lane2")].forEach(c=>{c.width=w*dpr;c.height=H*dpr;c.style.height=H+"px";c.getContext("2d").setTransform(dpr,0,0,dpr,0,0);});
   const l=$("lvl");l.width=w*dpr;l.height=12*dpr;l.getContext("2d").setTransform(dpr,0,0,dpr,0,0);
   ui.laneW=w;
-  if(!running&&(S.minimal?S.miniContour:S.fullContour))draw();   // resizing clears the canvases; redraw the idle ladder
+  if((!running||paused)&&(S.minimal?S.miniContour:S.fullContour))draw();   // resizing clears the canvases; redraw the idle ladder / frozen trace
 }
 function refresh(){
   $("panel").classList.toggle("hidden",!S.settingsOpen);
@@ -451,8 +455,9 @@ function refresh(){
   ["sizeStep","heardAuto","rangeAuto","spanSeg","noteStep","laneStep"].forEach(k=>ui[k]&&ui[k].refresh());
   ui.yousl.draw();ui.heardsl.draw();ui.rangesl.draw();
   if(ui.hdrStart){ui.hdrStart.textContent=running?"↻ restart":"▶ Start";ui.hdrStart.classList.toggle("blue",!running);}
+  if(ui.hdrPause){ui.hdrPause.textContent=paused?"▶ resume":"⏸ pause";ui.hdrPause.classList.toggle("blue",paused);ui.hdrPause.disabled=!running;}
   const sh=$("starthint");$("minihint").textContent=(sh.classList.contains("err")||sh.textContent.startsWith("Could"))?sh.textContent:"";
-  if(!running&&ui.laneW&&(S.minimal?S.miniContour:S.fullContour))draw();   // before Start: ladder + target lines, not an empty box
+  if((!running||paused)&&ui.laneW&&(S.minimal?S.miniContour:S.fullContour))draw();   // before Start: ladder + target lines, not an empty box; paused: redraw the frozen trace
 }
 // lane height = vertical resolution: more pixels per semitone, and sharps + semitone grid lines appear once there is room
 // note / Hz size per view (full vs minimal), as a CSS variable the .note and .hz rules scale from
@@ -483,7 +488,18 @@ function teardown(){
   streams.forEach(s=>s.getTracks().forEach(t=>t.stop()));streams=[];
   if(demo){try{demo.forEach(o=>o.stop());}catch(e){}demo=null;}
   if(ac){try{ac.close();}catch(e){}ac=null;}
-  running=false;
+  running=false;paused=false;
+}
+/* ============ pause / resume ============ */
+// Pause freezes the trace, the readouts and the clock so the contour's shape can be studied; the mic stays open.
+// On resume the clock skips the paused stretch (t0 moves forward), so the contour continues seamlessly from where it stopped.
+function nowT(){return (paused?pauseAt:performance.now()/1000)-t0;}
+function togglePause(){
+  if(!running)return;
+  const now=performance.now()/1000;
+  if(!paused){paused=true;pauseAt=now;}
+  else{const gap=now-pauseAt;t0+=gap;[you,hear].forEach(s=>{s.holdUntil+=gap;s.lastSignal+=gap;});paused=false;}
+  refresh();if(S.minimal?S.miniContour:S.fullContour)draw();if(pipEls)pipTick();
 }
 async function start(isDemo){
   teardown();you.reset();hear.reset();log=[];det=null;$("summary").textContent="";
@@ -568,6 +584,7 @@ function stopTicker(){if(!timer)return;if(timer instanceof Worker)timer.terminat
 /* ============ per tick ============ */
 let lastSec=-1;
 function tick(){
+  if(paused)return;                                             // frozen: nothing moves until resume
   const now=performance.now()/1000,t=now-t0;
   const hz=you.step(t,now),hhz=hearOn?hear.step(t,now):0;
   if(hz>0)log.push([t,hz,"you"]);if(hhz>0)log.push([t,hhz,"hear"]);
@@ -605,7 +622,7 @@ function tick(){
 
 /* ============ lanes ============ */
 function laneRange(){
-  const lv=S.you,hl=heardLevels(),tnow=performance.now()/1000-t0;
+  const lv=S.you,hl=heardLevels(),tnow=nowT();
   const shown=[lv.floor,lv.ceiling];if(hl.floor!=null)shown.push(hl.floor,hl.ceiling);
   const srcs=hearOn?[you,hear]:[you];const peaks=[];
   srcs.forEach(s=>s.trace.forEach(([tt,h])=>{if(h>0&&tnow-tt<=S.span)peaks.push(nOf(h));}));
@@ -644,6 +661,7 @@ function lane(c,lo,hi,tnow,caption,o){
   if(heardFull){hline(y(hl.floor),GREY,1,[6,3],"heard floor",true);hline(y(hl.home),GREY,2,[6,3],"heard home",true);hline(y(hl.ceiling),GREY,1,[6,3],"heard ceiling",true);}
   else if(hl&&hl.home!=null&&o.otherHome&&!o.hear)hline(y(hl.home),GREY,1,[2,4],"heard home",true);
   g.fillStyle=GREY;g.font="700 11px 'Google Sans',system-ui,sans-serif";g.textAlign="left";g.textBaseline="top";g.fillText(caption,5,4);
+  if(paused){g.fillStyle="#4285F4";g.fillText("⏸ paused · space resumes",5+g.measureText(caption).width+12,4);}
   if(o.hear)traceLine(g,hear.trace,lo,hi,y,tnow,tw,2);
   if(o.you){if(o.hear)traceLine(g,you.trace,lo,hi,y,tnow,tw,7,"#fff");traceLine(g,you.trace,lo,hi,y,tnow,tw,4);}
 }
@@ -703,13 +721,13 @@ async function openFloat(){
   </style>`;
   // a 2×3 grid: captions share row 1, notes row 2, Hz row 3 — so both notes start at the same height
   d.body.innerHTML=`<div class="g">
-    <div class="tog nav"><span class="lft"><span id="pst"></span><span class="sep"> · </span><span id="pfull">⤢ full view</span></span><span id="pt"></span><span class="sep" id="ps"> · </span><span id="po"></span></div>
+    <div class="tog nav"><span class="lft"><span id="pst"></span><span class="sep"> · </span><span id="ppause"></span><span class="sep"> · </span><span id="pfull">⤢ full view</span></span><span id="pt"></span><span class="sep" id="ps"> · </span><span id="po"></span></div>
     <div class="cap">YOU<div class="dev" id="yc"></div></div><div class="cap hearcol">HEAR<div class="dev" id="hcap"></div></div>
     <div class="note" id="yn">—</div><div class="note hearcol" id="hn">—</div>
     <div class="hz" id="yh"></div><div class="hz hearcol" id="hh"></div>
     <div class="tog"><span class="st">size <i id="ps-">−</i><b id="psv"></b><i id="ps+">+</i></span><span class="st">note <i id="pn-">−</i><b id="pn"></b><i id="pn+">+</i></span>
       <span class="st" id="plrow">contour <i id="pl-">−</i><b id="plv"></b><i id="pl+">+</i></span></div><canvas class="lane" id="pl"></canvas><canvas class="lane" id="pl2"></canvas></div><div class="hint" id="ph"></div>`;
-  pipEls={yn:d.getElementById("yn"),yh:d.getElementById("yh"),hn:d.getElementById("hn"),hh:d.getElementById("hh"),hc:[...d.querySelectorAll(".hearcol")],ph:d.getElementById("ph"),yc:d.getElementById("yc"),hcap:d.getElementById("hcap"),pt:d.getElementById("pt"),pst:d.getElementById("pst"),pfull:d.getElementById("pfull"),pl:d.getElementById("pl"),pl2:d.getElementById("pl2"),po:d.getElementById("po"),ps:d.getElementById("ps")};
+  pipEls={yn:d.getElementById("yn"),yh:d.getElementById("yh"),hn:d.getElementById("hn"),hh:d.getElementById("hh"),hc:[...d.querySelectorAll(".hearcol")],ph:d.getElementById("ph"),yc:d.getElementById("yc"),hcap:d.getElementById("hcap"),pt:d.getElementById("pt"),pst:d.getElementById("pst"),ppause:d.getElementById("ppause"),pfull:d.getElementById("pfull"),pl:d.getElementById("pl"),pl2:d.getElementById("pl2"),po:d.getElementById("po"),ps:d.getElementById("ps")};
   const applyContour=()=>{d.body.classList.toggle("nocontour",!S.pipContour);pipEls.pt.textContent=S.pipContour?"▾ contour":"▸ contour";pipEls.pt.style.color=S.pipContour?"#4285F4":"";pipEls.pt.style.fontWeight=S.pipContour?"700":"";
     const showView=S.pipContour&&hearOn;pipEls.po.style.display=pipEls.ps.style.display=showView?"":"none";pipEls.po.innerHTML=viewLabel(S.pipOverlay);
     const z=S.pipScale||1;d.documentElement.style.setProperty("--z",z);d.documentElement.style.setProperty("--na",(S.pipNoteArea*z)+"px");d.documentElement.style.setProperty("--lh",(S.pipLaneH*z)+"px");
@@ -726,6 +744,7 @@ async function openFloat(){
   d.getElementById("pl+").onclick=bump(()=>S.pipLaneH=Math.min(600,S.pipLaneH+20));
   pipEls.applyContour=applyContour;
   pipEls.pst.onclick=()=>start(false);
+  pipEls.ppause.onclick=togglePause;
   pipEls.pfull.onclick=()=>{if(S.minimal)toggleMinimal();try{window.focus();}catch(e){}};
   pipEls.pt.onclick=bump(()=>S.pipContour=!S.pipContour);
   pipEls.po.onclick=bump(()=>S.pipOverlay=!S.pipOverlay);applyContour();
@@ -749,8 +768,9 @@ function pipTick(){
   if(hearOn){e.hcap.textContent=hear.label?hear.label.replace(/\s*\(.*\)$/,""):"";
     if(hear.hz>0){const n=nOf(hear.hz);e.hn.textContent=nameOf(n);e.hn.style.color=specColour(n);e.hh.textContent=hear.hz.toFixed(0)+" Hz";e.hh.style.color=specColour(n);}
     else if(now>hear.holdUntil){e.hn.textContent="—";e.hn.style.color=FAINT;e.hh.textContent=now-hear.lastSignal>5?"silent":"";}}
-  e.ph.textContent=running?"":"not listening yet — press ▶ Start";
+  e.ph.textContent=running?(paused?"paused — look at the shape, then ▶ resume (space)":""):"not listening yet — press ▶ Start";
   e.pst.textContent=running?"↻ restart":"▶ Start";e.pst.classList.toggle("go",!running);
+  e.ppause.textContent=paused?"▶ resume":"⏸ pause";e.ppause.classList.toggle("on",paused);e.ppause.style.opacity=running?"":".4";
   // contour under the notes: the same lane renderer, sized to the window; overlay = one lane, stacked = YOU over HEAR
   if(S.pipContour&&pip){
     const stacked=hearOn&&!S.pipOverlay;pip.document.body.classList.toggle("stacked",stacked);e.applyContour();
@@ -774,6 +794,8 @@ function onKey(e,inPip){
   const plus=k==="+"||k==="="||code==="Equal"||code==="NumpadAdd";
   const minus=k==="-"||k==="_"||k==="\u2212"||k==="\u2013"||k==="Subtract"||code==="Minus"||code==="NumpadSubtract";
   const brL=k==="["||code==="BracketLeft",brR=k==="]"||code==="BracketRight";
+  const space=k===" "||code==="Space";
+  if(space||k==="p"){e.preventDefault();togglePause();return;}   // preventDefault: no page scroll, and no second toggle from a focused button
   const pipRefit=()=>{save();if(pipEls){pipEls.applyContour();try{pip.resizeTo(Math.max(pip.outerWidth,Math.round(420*(S.pipScale||1))),pipHeight());}catch(err){}pipTick();}};
   if(k==="ArrowUp"){shiftYou(1);e.preventDefault();}else if(k==="ArrowDown"){shiftYou(-1);e.preventDefault();}
   else if(k==="s"){if(inPip&&pipEls)pipEls.pst.textContent="starting…";if(ui.hdrStart)ui.hdrStart.textContent="starting…";start(false);}

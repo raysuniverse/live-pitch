@@ -23,7 +23,7 @@ Views: full page, **▭ minimal** (notes + contour only), and **⧉ float** (a s
 | Key | Action |
 |-----|--------|
 | **s** | start / restart |
-| **space** / **p** | pause / resume — freezes the contour so you can study its shape ; the clock skips the pause, so the line continues seamlessly |
+| **space** / **p** | pause / resume — freezes the contour so you can study its shape; the clock skips the pause, so the line continues seamlessly |
 | **c** | show / hide the contour |
 | **o** | overlay / stacked lanes |
 | **[ ]** | contour height |

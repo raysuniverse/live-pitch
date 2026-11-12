@@ -23,7 +23,7 @@ Views: full page, **▭ minimal** (notes + contour only), and **⧉ float** (a s
 | Key | Action |
 |-----|--------|
 | **s** | start / restart |
-| **space** / **p** | pause / resume — freezes the contour so you can study its shape (a manual range widens to fit the whole trace while paused); the clock skips the pause, so the line continues seamlessly |
+| **space** / **p** | pause / resume — freezes the contour so you can study its shape ; the clock skips the pause, so the line continues seamlessly |
 | **c** | show / hide the contour |
 | **o** | overlay / stacked lanes |
 | **[ ]** | contour height |
@@ -31,7 +31,7 @@ Views: full page, **▭ minimal** (notes + contour only), and **⧉ float** (a s
 | ↑ / ↓ | move all three targets |
 | a | their levels: auto / manual |
 | t | copy their levels to my targets |
-| r | display range: auto / manual |
+| r | display range: auto / manual (a manual range is a minimum — it widens so a note beyond it is still drawn, and never narrows) |
 | m | minimal view · d download the log (CSV) |
 
 The same keys work inside the float (click in it first; there, c / o / + − / [ ] change the float's own view).

@@ -631,8 +631,8 @@ function laneRange(){
   if(hi-lo<14){const mid=(hi+lo)/2;lo=mid-7;hi=mid+7;}
   autoLo=Math.floor(lo);autoHi=Math.ceil(hi);
   if(!S.rangeAuto){lo=S.lo;hi=S.hi;
-    // paused is for studying the shape: a fixed range still widens (never narrows) so the whole frozen trace is in view
-    if(paused&&peaks.length){lo=Math.min(lo,Math.floor(Math.min(...peaks)-1));hi=Math.max(hi,Math.ceil(Math.max(...peaks)+1));}}
+    // a fixed range is a minimum: it widens (never narrows) so a note beyond it is still drawn, live or paused
+    if(peaks.length){lo=Math.min(lo,Math.floor(Math.min(...peaks)-1));hi=Math.max(hi,Math.ceil(Math.max(...peaks)+1));}}
   else{lo=autoLo;hi=autoHi;}
   return{lo,hi,hl,tnow};
 }

@@ -15,10 +15,10 @@ Both are drawn against your own floor / home / ceiling targets.
 
 Every view has the same two control rows:
 
-- **Under the title:** Start / restart · minimal or full view · float — and on the right **▾ contour** (show / hide the plot) · **stack/overlay** (two lanes or one shared lane). The active choice is blue and bold.
+- **Under the title:** Start / restart · pause / resume (freezes the contour to study its shape) · minimal or full view · float — and on the right **▾ contour** (show / hide the plot) · **stack/overlay** (two lanes or one shared lane). The active choice is blue and bold.
 - **Above the contour:** **size** (zooms the whole view, title and controls included) · **note** (height of the note + Hz block) · **contour** (plot height). Heights are fixed once set, so nothing jumps while you speak.
 
-Views: full page, **▭ minimal** (notes + contour only), and **⧉ float** (a small always-on-top window, Chrome). Settings remember themselves per view. The full page also shows the five handy keys beside the device dropdowns.
+Views: full page, **▭ minimal** (notes + contour only), and **⧉ float** (a small always-on-top window, Chrome). Settings remember themselves per view. The full page also shows the six handy keys beside the device dropdowns.
 
 | Key | Action |
 |-----|--------|

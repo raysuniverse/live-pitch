@@ -694,17 +694,19 @@ let pip=null,pipEls=null;
 function pipHeight(){const lanes=S.pipContour?(hearOn&&!S.pipOverlay?2*S.pipLaneH+4:S.pipLaneH):0;return Math.round((16+32+S.pipNoteArea+54+lanes)*(S.pipScale||1))+40;}
 async function openFloat(){
   if(pip){pip.focus();return;}
-  try{pip=await documentPictureInPicture.requestWindow({width:420,height:pipHeight()});}
+  try{pip=await documentPictureInPicture.requestWindow({width:460,height:pipHeight()});}
   catch(e){$("starthint").textContent="Could not open the floating window ("+e.message+").";return;}
   const d=pip.document;
   d.head.innerHTML=`<meta charset="utf-8"><title>Live Pitch</title><style>
     html,body{margin:0;height:100%;background:#fff;font-family:"Google Sans",system-ui,-apple-system,Roboto,sans-serif;color:#202124;overflow:hidden}
     .g{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);grid-template-rows:calc(30px*var(--z,1)) calc(32px*var(--z,1)) auto auto calc(24px*var(--z,1)) var(--lh,140px);padding:calc(8px*var(--z,1)) 14px calc(8px*var(--z,1));box-sizing:border-box;column-gap:16px;align-content:start}
     .tog{grid-column:1/-1;display:flex;flex-wrap:nowrap;justify-content:flex-end;align-items:center;gap:6px 10px;font-size:calc(11px*var(--z,1));color:#5F6368;user-select:none;height:calc(24px*var(--z,1));overflow:hidden;white-space:nowrap}
-    .tog.nav{font-size:calc(14px*var(--z,1));height:calc(30px*var(--z,1));gap:6px 14px}.tog.nav .lft{gap:8px}
+    .tog.nav{font-size:calc(14px*var(--z,1));height:calc(30px*var(--z,1));gap:6px 14px;justify-content:flex-start}.tog.nav .lft{gap:8px}
     body{container-type:inline-size}
-    @container (max-width:400px){.tog.nav{font-size:calc(12px*var(--z,1));gap:6px 10px}.tog.nav .lft{gap:6px}.tog{font-size:calc(10px*var(--z,1))}.tog .st b{min-width:3em}}
-    @container (max-width:330px){.tog.nav{font-size:calc(11px*var(--z,1));gap:4px 6px}.tog.nav .lft{gap:4px}.tog .sep{display:none}}
+    @container (max-width:452px){.tog.nav{font-size:calc(13px*var(--z,1));gap:6px 12px}.tog.nav .lft{gap:7px}}
+    @container (max-width:428px){.tog.nav{font-size:calc(12px*var(--z,1));gap:6px 10px}.tog.nav .lft{gap:6px}.tog{font-size:calc(10px*var(--z,1))}.tog .st b{min-width:3em}}
+    @container (max-width:404px){.tog.nav{font-size:calc(11px*var(--z,1));gap:4px 8px}.tog.nav .lft{gap:5px}}
+    @container (max-width:380px){.tog.nav{font-size:calc(10px*var(--z,1));gap:4px 6px}.tog.nav .lft{gap:4px}.tog .sep{display:none}}
     .tog .st{display:inline-flex;align-items:center;gap:3px;color:#9AA0A6}.tog .st b{color:#5F6368;font-weight:600;min-width:3.5em;text-align:center}
     .tog .st i{font-style:normal;display:inline-block;width:calc(16px*var(--z,1));height:calc(16px*var(--z,1));line-height:calc(15px*var(--z,1));text-align:center;border:1px solid #DADCE0;border-radius:50%;cursor:pointer;color:#5F6368}
     .tog .st i:hover{background:#F1F3F4}
@@ -738,7 +740,7 @@ async function openFloat(){
     d.getElementById("psv").textContent=Math.round(S.pipScale*100)+"%";
     d.getElementById("plrow").style.display=S.pipContour?"":"none";};
   // every click is a user gesture, so the window may be resized to fit the new fixed heights
-  const bump=(fn)=>()=>{fn();save();applyContour();try{pip.resizeTo(Math.max(pip.outerWidth,Math.round(420*(S.pipScale||1))),pipHeight());}catch(e){}pipTick();};
+  const bump=(fn)=>()=>{fn();save();applyContour();try{pip.resizeTo(Math.max(pip.outerWidth,Math.round(460*(S.pipScale||1))),pipHeight());}catch(e){}pipTick();};
   d.getElementById("ps-").onclick=bump(()=>S.pipScale=Math.max(0.6,Math.round((S.pipScale-0.1)*10)/10));
   d.getElementById("ps+").onclick=bump(()=>S.pipScale=Math.min(2,Math.round((S.pipScale+0.1)*10)/10));
   d.getElementById("pn-").onclick=bump(()=>S.pipNoteArea=Math.max(50,S.pipNoteArea-10));
@@ -799,7 +801,7 @@ function onKey(e,inPip){
   const brL=k==="["||code==="BracketLeft",brR=k==="]"||code==="BracketRight";
   const space=k===" "||code==="Space";
   if(space||k==="p"){e.preventDefault();togglePause();return;}   // preventDefault: no page scroll, and no second toggle from a focused button
-  const pipRefit=()=>{save();if(pipEls){pipEls.applyContour();try{pip.resizeTo(Math.max(pip.outerWidth,Math.round(420*(S.pipScale||1))),pipHeight());}catch(err){}pipTick();}};
+  const pipRefit=()=>{save();if(pipEls){pipEls.applyContour();try{pip.resizeTo(Math.max(pip.outerWidth,Math.round(460*(S.pipScale||1))),pipHeight());}catch(err){}pipTick();}};
   if(k==="ArrowUp"){shiftYou(1);e.preventDefault();}else if(k==="ArrowDown"){shiftYou(-1);e.preventDefault();}
   else if(k==="s"){if(inPip&&pipEls)pipEls.pst.textContent="starting…";if(ui.hdrStart)ui.hdrStart.textContent="starting…";start(false);}
   else if(k==="c"){if(inPip){S.pipContour=!S.pipContour;pipRefit();}else{if(S.minimal)S.miniContour=!S.miniContour;else S.fullContour=!S.fullContour;save();build();}}
